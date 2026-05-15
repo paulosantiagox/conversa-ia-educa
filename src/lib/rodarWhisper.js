@@ -69,6 +69,14 @@ export async function rodarWhisper(modo = 'teste', onLog = () => {}, onCancel = 
         .update({ transcricao })
         .eq('id', audio.id)
 
+      await supabase.from('ci_uso_api').insert({
+        servico: 'openai',
+        operacao: 'transcricao_audio',
+        modelo: 'whisper-1',
+        custo_usd: 0.006 / 60,
+        conversa_id: audio.conversa_id ?? null,
+      })
+
       concluidas++
       onLog(`✓ [${i + 1}/${total}] ${transcricao.substring(0, 60)}...`)
     } catch (err) {

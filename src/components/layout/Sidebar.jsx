@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, MessageSquare, Flame, Bell, TrendingUp, Trophy,
-  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap, Settings, RefreshCw
+  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap, Settings, RefreshCw, DollarSign
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -75,6 +75,7 @@ export function Sidebar() {
       items: [
         { to: '/configuracoes', label: 'Configurações', icon: Settings },
         { to: '/sync',          label: 'Sync DataCrazy', icon: RefreshCw },
+        { to: '/custos',        label: 'Custos',         icon: DollarSign },
       ],
     },
   ]
