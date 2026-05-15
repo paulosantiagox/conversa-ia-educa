@@ -85,7 +85,7 @@ export async function resyncAudios(onLog = () => {}, onCancel = null, onProgress
     const pct = Math.round(((i + 1) / total) * 100)
     onProgress?.({ atual: i + 1, total, atualizadas, audiosEncontrados, erros, pct })
 
-    await delay(500)
+    await delay(1200)
   }
 
   onLog(`✓ Re-sync concluído: ${atualizadas} conversas com áudio | ${audiosEncontrados} mensagens corrigidas | ${erros} erros`)
