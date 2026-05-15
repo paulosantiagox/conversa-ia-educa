@@ -1,29 +1,54 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 import { CONVERSAS } from '../lib/mockData'
 
-const USE_MOCK = true
+const USE_MOCK = false
 
 export function useConversas(filtros = {}) {
-  const [loading] = useState(false)
+  const [conversas, setConversas] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const conversas = useMemo(() => {
-    if (!USE_MOCK) return []
-    let data = [...CONVERSAS]
-
-    if (filtros.status) data = data.filter(c => c.status === filtros.status)
-    if (filtros.consultora) data = data.filter(c => c.consultora === filtros.consultora)
-    if (filtros.classificacao) data = data.filter(c => c.classificacao_ia === filtros.classificacao)
-    if (filtros.busca) {
-      const b = filtros.busca.toLowerCase()
-      data = data.filter(c =>
-        c.contato_nome?.toLowerCase().includes(b) ||
-        c.contato_numero?.includes(b) ||
-        c.ultima_mensagem_texto?.toLowerCase().includes(b)
-      )
+  useEffect(() => {
+    if (USE_MOCK) {
+      setConversas(CONVERSAS)
+      setLoading(false)
+      return
     }
 
-    return data.sort((a, b) => new Date(b.ultima_mensagem_at) - new Date(a.ultima_mensagem_at))
-  }, [filtros])
+    async function fetchConversas() {
+      setLoading(true)
+      setError(null)
+      try {
+        let query = supabase
+          .from('ci_conversas')
+          .select('*')
+          .gt('total_mensagens', 0)
+          .order('ultima_mensagem_at', { ascending: false })
+          .not('datacrazy_id', 'is', null)
 
-  return { conversas, loading }
+        if (filtros.status) query = query.eq('status', filtros.status)
+        if (filtros.consultora) query = query.eq('consultora', filtros.consultora)
+        if (filtros.classificacao) query = query.eq('classificacao_ia', filtros.classificacao)
+        if (filtros.busca) {
+          query = query.or(
+            `contato_nome.ilike.%${filtros.busca}%,contato_numero.ilike.%${filtros.busca}%,ultima_mensagem_texto.ilike.%${filtros.busca}%`
+          )
+        }
+
+        const { data, error: err } = await query
+        if (err) throw err
+        setConversas(data || [])
+      } catch (err) {
+        console.error('[useConversas] erro:', err.message || err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchConversas()
+  }, [filtros.status, filtros.consultora, filtros.classificacao, filtros.busca])
+
+  return { conversas, loading, error }
 }

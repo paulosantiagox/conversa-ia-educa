@@ -488,6 +488,8 @@ export const MENSAGENS = {
     { id: 'm11', de: 'lead', conteudo: 'Nossa... 3 vagas só? Quanto é cada parcela?', enviado_at: hoursAgo(1.5) },
     { id: 'm12', de: 'consultora', conteudo: 'São 12x de R$ 29,70! Menos de R$ 1 por dia para mudar sua vida 💪 Vou te mandar o link de inscrição', enviado_at: hoursAgo(1.4) },
     { id: 'm13', de: 'lead', conteudo: 'Quanto custa o curso mesmo? Posso parcelar?', enviado_at: hoursAgo(1.2) },
+    { id: 'm14', de: 'lead', tipo: 'audio', audio_url: null, duracao_segundos: 18, transcricao: 'Eu quero parcelar em mais vezes, tem como fazer em 24 vezes?', enviado_at: hoursAgo(1.0) },
+    { id: 'm15', de: 'consultora', conteudo: 'Pode sim! Em 24x fica R$ 14,87 por mês 🎉', enviado_at: hoursAgo(0.9) },
   ],
 }
 

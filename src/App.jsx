@@ -1,6 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { MainLayout } from './components/layout/MainLayout'
 import { FiltroProvider } from './contexts/FiltroContext'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { ToastProvider } from './contexts/ToastContext'
+import { SyncProvider } from './contexts/SyncContext'
 import { Dashboard } from './pages/Dashboard/Dashboard'
 import { Inbox } from './pages/Inbox/Inbox'
 import { LeadsQuentes } from './pages/LeadsQuentes/LeadsQuentes'
@@ -10,10 +13,16 @@ import { Insights } from './pages/Insights/Insights'
 import { Alertas } from './pages/Alertas/Alertas'
 import { Marcacoes } from './pages/Marcacoes/Marcacoes'
 import { FollowUp } from './pages/FollowUp/FollowUp'
+import { Configuracoes } from './pages/Configuracoes/Configuracoes'
+import { Sync } from './pages/Sync/Sync'
+import { AnaliseIA } from './pages/AnaliseIA/AnaliseIA'
 
 export default function App() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
+      <ToastProvider>
+      <SyncProvider>
       <FiltroProvider>
         <MainLayout>
           <Routes>
@@ -26,9 +35,15 @@ export default function App() {
             <Route path="/alertas" element={<Alertas />} />
             <Route path="/marcacoes" element={<Marcacoes />} />
             <Route path="/followup" element={<FollowUp />} />
+            <Route path="/configuracoes" element={<Configuracoes />} />
+            <Route path="/sync" element={<Sync />} />
+            <Route path="/analise-ia" element={<AnaliseIA />} />
           </Routes>
         </MainLayout>
       </FiltroProvider>
+      </SyncProvider>
+      </ToastProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

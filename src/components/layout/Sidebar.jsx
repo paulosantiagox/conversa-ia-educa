@@ -1,52 +1,83 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, MessageSquare, Flame, Bell, TrendingUp, Trophy,
-  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap
+  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap, Settings, RefreshCw
 } from 'lucide-react'
-import { ALERTAS, CONVERSAS, FOLLOWUPS } from '../../lib/mockData'
+import { supabase } from '../../lib/supabase'
 
-const alertasAtivos = ALERTAS.filter(a => !a.lido).length
-const conversasAbertas = CONVERSAS.filter(c => c.status !== 'vendido' && c.status !== 'perdido').length
-const leadsQuentes = CONVERSAS.filter(c => c.classificacao_ia === 'quente').length
-const followupsPendentes = FOLLOWUPS.filter(f => f.status === 'pendente').length
+function useBadges() {
+  const [badges, setBadges] = useState({ inbox: 0, quentes: 0, alertas: 0, followups: 0 })
 
-const NAV = [
-  {
-    section: 'VISÃO GERAL',
-    items: [
-      { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-    ],
-  },
-  {
-    section: 'CONVERSAS',
-    items: [
-      { to: '/inbox', label: 'Inbox', icon: MessageSquare, badge: conversasAbertas },
-      { to: '/leads-quentes', label: 'Leads Quentes', icon: Flame, badge: leadsQuentes, badgeColor: 'bg-red-500' },
-      { to: '/alertas', label: 'Alertas', icon: Bell, badge: alertasAtivos, badgeColor: 'bg-orange-500' },
-    ],
-  },
-  {
-    section: 'COMERCIAL',
-    items: [
-      { to: '/funil', label: 'Funil', icon: TrendingUp },
-      { to: '/ranking', label: 'Ranking', icon: Trophy },
-      { to: '/followup', label: 'Follow-up IA', icon: Sparkles, badge: followupsPendentes, badgeColor: 'bg-purple-500' },
-    ],
-  },
-  {
-    section: 'ANÁLISE',
-    items: [
-      { to: '/insights', label: 'Insights', icon: Brain },
-      { to: '/marcacoes', label: 'Marcações', icon: Tag },
-    ],
-  },
-]
+  async function buscar() {
+    const [inbox, quentes, alertas, followups] = await Promise.all([
+      supabase.from('ci_conversas').select('*', { count: 'exact', head: true }).or('classificacao_ia.is.null,and(classificacao_ia.neq.vendido,classificacao_ia.neq.perdido)'),
+      supabase.from('ci_conversas').select('*', { count: 'exact', head: true }).eq('classificacao_ia', 'quente'),
+      supabase.from('ci_alertas').select('*', { count: 'exact', head: true }).eq('lido', false),
+      supabase.from('ci_followups').select('*', { count: 'exact', head: true }).eq('status', 'pendente'),
+    ])
+    setBadges({
+      inbox:    inbox.count    ?? 0,
+      quentes:  quentes.count  ?? 0,
+      alertas:  alertas.count  ?? 0,
+      followups: followups.count ?? 0,
+    })
+  }
+
+  useEffect(() => {
+    buscar()
+    const t = setInterval(buscar, 60_000)
+    return () => clearInterval(t)
+  }, [])
+
+  return badges
+}
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const width = collapsed ? 52 : 220
+  const badges = useBadges()
+
+  const NAV = [
+    {
+      section: 'VISÃO GERAL',
+      items: [
+        { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+      ],
+    },
+    {
+      section: 'CONVERSAS',
+      items: [
+        { to: '/inbox',        label: 'Inbox',         icon: MessageSquare, badge: badges.inbox,    badgeColor: 'bg-blue-500' },
+        { to: '/leads-quentes',label: 'Leads Quentes', icon: Flame,         badge: badges.quentes,  badgeColor: 'bg-red-500' },
+        { to: '/alertas',      label: 'Alertas',       icon: Bell,          badge: badges.alertas,  badgeColor: 'bg-orange-500' },
+      ],
+    },
+    {
+      section: 'COMERCIAL',
+      items: [
+        { to: '/funil',   label: 'Funil',       icon: TrendingUp },
+        { to: '/ranking', label: 'Ranking',      icon: Trophy },
+        { to: '/followup',label: 'Follow-up IA', icon: Sparkles, badge: badges.followups, badgeColor: 'bg-purple-500' },
+      ],
+    },
+    {
+      section: 'ANÁLISE',
+      items: [
+        { to: '/insights',   label: 'Insights',   icon: Brain },
+        { to: '/marcacoes',  label: 'Marcações',  icon: Tag },
+        { to: '/analise-ia', label: 'Análise IA', icon: Brain },
+      ],
+    },
+    {
+      section: 'SISTEMA',
+      items: [
+        { to: '/configuracoes', label: 'Configurações', icon: Settings },
+        { to: '/sync',          label: 'Sync DataCrazy', icon: RefreshCw },
+      ],
+    },
+  ]
 
   return (
     <aside

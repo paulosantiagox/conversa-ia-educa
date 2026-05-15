@@ -54,3 +54,39 @@ Quando USE_MOCK = false → busca do Supabase (schema: conversa_ia)
 Projeto: dfrfeirfllwmdkenylwk
 Schema: conversa_ia
 Tabelas: numeros, conversas, mensagens, marcacoes, followups, alertas, sync_logs
+
+## Motor de IA
+Modelo: claude-sonnet-4-6
+Análise: score, classificação, chance fechamento, objeções, erros, sugestões
+Página: /analise-ia
+Processa em lotes de 100, delay 500ms entre análises
+Prioridade: conversas mais recentes primeiro (ORDER BY ultima_mensagem_at DESC)
+Ignora: conversas com menos de 2 mensagens
+Lib: src/lib/analisaIA.js (analisarConversa) + src/lib/rodarAnalise.js (rodarAnaliseIA, rodarAnaliseModo, contarPendentes)
+
+## DataCrazy
+Base URL: https://api.g1.datacrazy.io
+Filtro obrigatório: apenas instâncias com nome começando em "EEB"
+Rate limit: 60 req/min — sempre usar delay de 1s entre páginas
+Sync manual: página /sync
+Campo consultora: attendants[0].name (fallback: "Sem atendente")
+Lib: src/lib/datacrazy.js (fetchConversations, fetchMessages, isEJA, mapConversation)
+Sync: src/lib/syncDataCrazy.js (syncConversas, syncMensagensConversa, organizarDadosConversa)
+Sync mensagens: src/lib/syncMensagens.js (syncMensagensModo, estimarTempo)
+
+## Modos de operação (TESTE / RECENTES / COMPLETO)
+Todas as operações de sync e análise usam 3 modos selecionáveis:
+- TESTE: 50 conversas mais recentes — para validar sem impacto (~1 min)
+- RECENTES: Últimos 30 dias — para operação diária (~20–60 min)
+- COMPLETO: Todas as pendentes — overnight (~4h+)
+
+Sync de Conversas: syncConversas() — sempre varre todas as páginas da API
+Sync de Mensagens: syncMensagensModo(modo) — busca total_mensagens=0 (exceto teste: 50 recentes)
+Análise IA: rodarAnaliseModo(modo) — busca score_ia IS NULL + total_mensagens > 0
+Análise individual: PainelIA tem botão "Analisar esta conversa" → analisarConversa() + upsert
+
+## Campos calculados (organizarDadosConversa)
+- total_mensagens: contagem de msgs não-internas não-deletadas
+- primeira_msg_automatica: true se primeira msg da consultora é áudio
+- tempo_resposta_medio: média dos tempos (min) de resposta lead→consultora (<24h)
+- janela_24h_status: 'aberta' (<20h) | 'critica' (20-24h) | 'expirada' (>24h) | 'sem_interacao'

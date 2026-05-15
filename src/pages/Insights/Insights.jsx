@@ -55,16 +55,16 @@ const INSIGHTS = [
 function InsightCard({ insight }) {
   const { icon: Icon, color, title, valor, descricao, sub } = insight
   return (
-    <div className="bg-white border border-slate-200 rounded-[6px] p-4 hover:border-slate-300 transition-colors">
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] p-4 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}15` }}>
           <Icon size={16} style={{ color }} />
         </div>
         <div>
-          <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wide mb-1">{title}</p>
-          <p className="text-[15px] font-bold text-slate-800 mb-1">{valor}</p>
-          <p className="text-[12px] text-slate-600 mb-1">{descricao}</p>
-          <p className="text-[11px] text-slate-400 italic">{sub}</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide mb-1">{title}</p>
+          <p className="text-[15px] font-bold text-slate-800 dark:text-slate-100 mb-1">{valor}</p>
+          <p className="text-[12px] text-slate-600 dark:text-slate-300 mb-1">{descricao}</p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 italic">{sub}</p>
         </div>
       </div>
     </div>
@@ -75,10 +75,10 @@ export function Insights() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Topbar title="Insights da IA" />
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900">
         <div className="flex items-center gap-2 mb-3">
           <Brain size={14} className="text-blue-500" />
-          <p className="text-[12px] text-slate-500">Padrões detectados com base nas conversas dos últimos 7 dias</p>
+          <p className="text-[12px] text-slate-500 dark:text-slate-400">Padrões detectados com base nas conversas dos últimos 7 dias</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {INSIGHTS.map((insight, i) => (
