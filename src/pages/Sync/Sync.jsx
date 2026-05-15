@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { RefreshCw, CheckCircle, XCircle, Clock, Database, MessageSquare, StopCircle, AlertTriangle, Brain, Zap, Info } from 'lucide-react'
+import { RefreshCw, CheckCircle, XCircle, Clock, Database, MessageSquare, StopCircle, AlertTriangle, Brain, Zap, Info, Volume2 } from 'lucide-react'
 import { Topbar } from '../../components/layout/Topbar'
 import { useToast } from '../../contexts/ToastContext'
 import { useSync } from '../../contexts/SyncContext'
@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase'
 import { fetchConversations } from '../../lib/datacrazy'
 import { estimarTempo } from '../../lib/syncMensagens'
 import { contarPendentes, contarAnalisadas } from '../../lib/rodarAnalise'
+import { resyncAudios } from '../../lib/resyncAudios'
 
 function StatusBadgeConn({ ok, testando }) {
   if (testando) return (
@@ -116,6 +117,12 @@ export function Sync() {
   const [modoMsg, setModoMsg] = useState('teste')
   const [modoIA, setModoIA] = useState('teste')
   const [statsIA, setStatsIA] = useState({ pendentes: 0, analisadas: 0 })
+  const [resyncAtivo, setResyncAtivo] = useState(false)
+  const [resyncLogs, setResyncLogs] = useState([])
+  const [resyncProgresso, setResyncProgresso] = useState(null)
+  const [resyncResultado, setResyncResultado] = useState(null)
+  const resyncCancelRef = useRef(false)
+  const logsEndResyncRef = useRef(null)
 
   const logsEndRef = useRef(null)
   const logsEndMsgRef = useRef(null)
@@ -127,6 +134,7 @@ export function Sync() {
   useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [syncConversasLogs])
   useEffect(() => { logsEndMsgRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [syncMensagensLogs])
   useEffect(() => { logsEndIARef.current?.scrollIntoView({ behavior: 'smooth' }) }, [analiseLogs])
+  useEffect(() => { logsEndResyncRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [resyncLogs])
 
   async function testarConexao() {
     setTestando(true)
@@ -181,6 +189,30 @@ export function Sync() {
     const resultado = await iniciarSyncMensagens(modoMsg)
     if (!resultado) return
     toast.success(`Sync de mensagens concluído: ${resultado.mensagensImportadas} importadas`)
+    await carregarStats()
+  }
+
+  async function handleResyncAudios() {
+    resyncCancelRef.current = false
+    setResyncAtivo(true)
+    setResyncLogs([])
+    setResyncProgresso(null)
+    setResyncResultado(null)
+
+    const addLog = (msg) => {
+      const ts = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      setResyncLogs(prev => [...prev, { ts, msg }])
+    }
+
+    const resultado = await resyncAudios(
+      addLog,
+      () => resyncCancelRef.current,
+      (prog) => setResyncProgresso(prog)
+    )
+
+    setResyncAtivo(false)
+    setResyncResultado(resultado)
+    toast.success(`Re-sync concluído: ${resultado.audiosEncontrados} áudios corrigidos`)
     await carregarStats()
   }
 
@@ -625,6 +657,76 @@ export function Sync() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Re-sync de Áudios */}
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] p-3 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Volume2 size={14} className="text-purple-500" />
+              <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">Re-sync de Áudios</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {resyncProgresso && (
+                <span className="text-[11px] text-slate-400">
+                  {resyncProgresso.atual}/{resyncProgresso.total} ({resyncProgresso.pct}%)
+                </span>
+              )}
+              {resyncAtivo ? (
+                <button
+                  onClick={() => { resyncCancelRef.current = true }}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors"
+                >
+                  <StopCircle size={11} /> Parar
+                </button>
+              ) : (
+                <button
+                  onClick={handleResyncAudios}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+                >
+                  <Volume2 size={11} /> Corrigir Áudios
+                </button>
+              )}
+            </div>
+          </div>
+
+          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+            Corrige mensagens de áudio salvas incorretamente como texto. Verifica conversas dos últimos 60 dias e preenche <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded">audio_url</code> e <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded">tipo=audio</code>.
+          </p>
+
+          {resyncProgresso && (
+            <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1">
+              <div
+                className="bg-purple-500 h-1 rounded-full transition-all duration-300"
+                style={{ width: `${resyncProgresso.pct}%` }}
+              />
+            </div>
+          )}
+
+          {resyncResultado && !resyncAtivo && (
+            <div className="flex items-center gap-4 text-[11px] bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600 px-3 py-2">
+              <span className="text-purple-500 font-semibold">{resyncResultado.atualizadas} conversas</span>
+              <span className="text-slate-500">com áudio detectado</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-200">{resyncResultado.audiosEncontrados} mensagens corrigidas</span>
+              {resyncResultado.erros > 0 && <span className="text-amber-500">{resyncResultado.erros} erros</span>}
+            </div>
+          )}
+
+          <div
+            className="h-28 overflow-y-auto bg-slate-950 rounded p-2.5 font-mono text-[11px] space-y-0.5"
+            style={{ scrollbarWidth: 'thin' }}
+          >
+            {resyncLogs.length === 0 && !resyncAtivo && (
+              <p className="text-slate-500">Clique em "Corrigir Áudios" para iniciar...</p>
+            )}
+            {resyncLogs.map((l, i) => (
+              <div key={i} className="flex gap-2">
+                <span className="text-slate-600 shrink-0">{l.ts}</span>
+                <LogLine msg={l.msg} />
+              </div>
+            ))}
+            <div ref={logsEndResyncRef} />
           </div>
         </div>
 

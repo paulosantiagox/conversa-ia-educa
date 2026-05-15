@@ -192,13 +192,16 @@ export async function syncMensagensConversa(conversa, onLog = () => {}) {
     for (const msg of mensagens) {
       if (msg.isInternal === true || msg.deleted === true) continue
       try {
-        const hasAudio = Array.isArray(msg.attachments) &&
-          msg.attachments.some(a => a.type?.startsWith('audio/'))
-        const tipo = hasAudio ? 'audio' : (msg.type === 'image' ? 'imagem' : 'texto')
+        const isAudio = (a) => a.type === 'AUDIO' || a.mimeType?.startsWith('audio/')
+        const isImage = (a) => a.type === 'IMAGE' || a.mimeType?.startsWith('image/')
+        const atts = Array.isArray(msg.attachments) ? msg.attachments : []
+        const audioAtt = atts.find(isAudio)
+        const hasImage = atts.some(isImage)
+        const tipo = audioAtt ? 'audio' : hasImage ? 'imagem' : 'texto'
         const de = msg.received ? 'lead' : 'consultora'
-        const audioAttachment = hasAudio
-          ? msg.attachments.find(a => a.type?.startsWith('audio/'))
-          : null
+
+        // Detectar áudio automático de boas-vindas (vem de flow-attachments)
+        const isAutoAudio = audioAtt && audioAtt.url?.includes('/flow-attachments/')
 
         const { error } = await supabase
           .from('ci_mensagens')
@@ -209,7 +212,8 @@ export async function syncMensagensConversa(conversa, onLog = () => {}) {
             de,
             conteudo: msg.body ?? '',
             enviado_at: msg.createdAt ?? null,
-            audio_url: audioAttachment?.url ?? null,
+            audio_url: audioAtt?.url ?? null,
+            is_auto: isAutoAudio ?? false,
             created_at: new Date().toISOString(),
           }, { onConflict: 'datacrazy_id' })
 
@@ -332,15 +336,14 @@ export async function syncMensagens(conversaId, datacrazyId, onLog = () => {}) {
 
         if (existente) continue
 
-        const hasAudio = Array.isArray(msg.attachments) &&
-          msg.attachments.some(a => a.type?.startsWith('audio/'))
-
-        const tipo = hasAudio ? 'audio' : (msg.type === 'image' ? 'imagem' : 'texto')
+        const isAudio = (a) => a.type === 'AUDIO' || a.mimeType?.startsWith('audio/')
+        const isImage = (a) => a.type === 'IMAGE' || a.mimeType?.startsWith('image/')
+        const atts = Array.isArray(msg.attachments) ? msg.attachments : []
+        const audioAtt = atts.find(isAudio)
+        const hasImage = atts.some(isImage)
+        const tipo = audioAtt ? 'audio' : hasImage ? 'imagem' : 'texto'
         const de = msg.received ? 'lead' : 'consultora'
-
-        const audioAttachment = hasAudio
-          ? msg.attachments.find(a => a.type?.startsWith('audio/'))
-          : null
+        const isAutoAudio = audioAtt && audioAtt.url?.includes('/flow-attachments/')
 
         const { error } = await supabase
           .from('ci_mensagens')
@@ -351,7 +354,8 @@ export async function syncMensagens(conversaId, datacrazyId, onLog = () => {}) {
             de,
             conteudo: msg.body ?? '',
             enviado_at: msg.createdAt ?? null,
-            audio_url: audioAttachment?.url ?? null,
+            audio_url: audioAtt?.url ?? null,
+            is_auto: isAutoAudio ?? false,
             created_at: new Date().toISOString(),
           })
 
