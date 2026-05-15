@@ -42,6 +42,25 @@ export async function rodarWhisper(modo = 'teste', onLog = () => {}, onCancel = 
 
     const audio = audios[i]
     try {
+      const { data: cache } = await supabase
+        .from('ci_mensagens')
+        .select('transcricao')
+        .eq('audio_url', audio.audio_url)
+        .not('transcricao', 'is', null)
+        .limit(1)
+        .maybeSingle()
+
+      if (cache?.transcricao) {
+        await supabase
+          .from('ci_mensagens')
+          .update({ transcricao: cache.transcricao })
+          .eq('id', audio.id)
+        concluidas++
+        onLog(`✓ [${i + 1}/${total}] [cache] ${cache.transcricao.substring(0, 60)}...`)
+        onProgress?.({ atual: i + 1, total, concluidas, erros, pct: Math.round(((i + 1) / total) * 100) })
+        continue
+      }
+
       onLog(`ℹ [${i + 1}/${total}] Transcrevendo...`)
       const transcricao = await transcreverAudio(audio.audio_url, audio.datacrazy_id)
 
