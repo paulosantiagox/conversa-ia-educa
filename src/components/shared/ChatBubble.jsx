@@ -150,9 +150,23 @@ function AudioPlayer({ mensagem, isLead }) {
   )
 }
 
-export function ChatBubble({ mensagem }) {
+function Avatar({ nome, isLead }) {
+  const inicial = nome ? nome.trim()[0].toUpperCase() : (isLead ? 'L' : 'C')
+  return (
+    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
+      isLead
+        ? 'bg-slate-300 dark:bg-slate-600 text-slate-600 dark:text-slate-300'
+        : 'bg-emerald-600 text-white'
+    }`}>
+      {inicial}
+    </div>
+  )
+}
+
+export function ChatBubble({ mensagem, mostrarNome = false }) {
   if (!mensagem) return null
   const isLead = mensagem.de === 'lead' || mensagem.de === 'contato'
+  const nomeConsultora = !isLead ? (mensagem.attendant_nome || null) : null
 
   const hora = formatarTimestamp(mensagem.enviado_at)
   const dataCompleta = mensagem.enviado_at
@@ -160,8 +174,17 @@ export function ChatBubble({ mensagem }) {
     : null
 
   return (
-    <div className={`flex ${isLead ? 'justify-start' : 'justify-end'} mb-2`}>
+    <div className={`flex items-end gap-2 ${isLead ? 'justify-start' : 'justify-end'} mb-2`}>
+      {isLead && <Avatar nome={null} isLead={true} />}
+
       <div className="max-w-[75%]">
+        {/* Nome da consultora acima da bolha — igual ao DataCrazy */}
+        {!isLead && nomeConsultora && (
+          <div className="text-[10px] font-semibold text-emerald-500 dark:text-emerald-400 text-right mb-0.5">
+            {nomeConsultora}
+          </div>
+        )}
+
         {(mensagem.tipo === 'audio' || mensagem.audio_url) ? (
           <AudioPlayer mensagem={mensagem} isLead={isLead} />
         ) : (
@@ -182,6 +205,8 @@ export function ChatBubble({ mensagem }) {
           {hora}
         </div>
       </div>
+
+      {!isLead && <Avatar nome={nomeConsultora} isLead={false} />}
     </div>
   )
 }

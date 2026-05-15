@@ -199,9 +199,8 @@ export async function syncMensagensConversa(conversa, onLog = () => {}) {
         const hasImage = atts.some(isImage)
         const tipo = audioAtt ? 'audio' : hasImage ? 'imagem' : 'texto'
         const de = msg.received ? 'lead' : 'consultora'
-
-        // Detectar áudio automático de boas-vindas (vem de flow-attachments)
         const isAutoAudio = audioAtt && audioAtt.url?.includes('/flow-attachments/')
+        const attendant_nome = !msg.received && msg.attendant?.name ? msg.attendant.name : null
 
         const { error } = await supabase
           .from('ci_mensagens')
@@ -214,6 +213,7 @@ export async function syncMensagensConversa(conversa, onLog = () => {}) {
             enviado_at: msg.createdAt ?? null,
             audio_url: audioAtt?.url ?? null,
             is_auto: isAutoAudio ?? false,
+            attendant_nome,
             created_at: new Date().toISOString(),
           }, { onConflict: 'datacrazy_id' })
 
@@ -344,6 +344,7 @@ export async function syncMensagens(conversaId, datacrazyId, onLog = () => {}) {
         const tipo = audioAtt ? 'audio' : hasImage ? 'imagem' : 'texto'
         const de = msg.received ? 'lead' : 'consultora'
         const isAutoAudio = audioAtt && audioAtt.url?.includes('/flow-attachments/')
+        const attendant_nome = !msg.received && msg.attendant?.name ? msg.attendant.name : null
 
         const { error } = await supabase
           .from('ci_mensagens')
@@ -356,6 +357,7 @@ export async function syncMensagens(conversaId, datacrazyId, onLog = () => {}) {
             enviado_at: msg.createdAt ?? null,
             audio_url: audioAtt?.url ?? null,
             is_auto: isAutoAudio ?? false,
+            attendant_nome,
             created_at: new Date().toISOString(),
           })
 
