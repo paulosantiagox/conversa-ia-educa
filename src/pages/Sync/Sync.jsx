@@ -122,19 +122,19 @@ export function Sync() {
   const [resyncProgresso, setResyncProgresso] = useState(null)
   const [resyncResultado, setResyncResultado] = useState(null)
   const resyncCancelRef = useRef(false)
-  const logsEndResyncRef = useRef(null)
+  const logsResyncContainerRef = useRef(null)
 
-  const logsEndRef = useRef(null)
-  const logsEndMsgRef = useRef(null)
-  const logsEndIARef = useRef(null)
+  const logsContainerRef = useRef(null)
+  const logsMsgContainerRef = useRef(null)
+  const logsIAContainerRef = useRef(null)
 
   useEffect(() => { testarConexao() }, [])
   useEffect(() => { carregarHistorico(); carregarStats() }, [])
   useEffect(() => { carregarStatsIA() }, [])
-  useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [syncConversasLogs])
-  useEffect(() => { logsEndMsgRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [syncMensagensLogs])
-  useEffect(() => { logsEndIARef.current?.scrollIntoView({ behavior: 'smooth' }) }, [analiseLogs])
-  useEffect(() => { logsEndResyncRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [resyncLogs])
+  useEffect(() => { if (logsContainerRef.current) logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight }, [syncConversasLogs])
+  useEffect(() => { if (logsMsgContainerRef.current) logsMsgContainerRef.current.scrollTop = logsMsgContainerRef.current.scrollHeight }, [syncMensagensLogs])
+  useEffect(() => { if (logsIAContainerRef.current) logsIAContainerRef.current.scrollTop = logsIAContainerRef.current.scrollHeight }, [analiseLogs])
+  useEffect(() => { if (logsResyncContainerRef.current) logsResyncContainerRef.current.scrollTop = logsResyncContainerRef.current.scrollHeight }, [resyncLogs])
 
   async function testarConexao() {
     setTestando(true)
@@ -302,6 +302,7 @@ export function Sync() {
             )}
 
             <div
+              ref={logsContainerRef}
               className="h-48 overflow-y-auto bg-slate-950 rounded p-2.5 font-mono text-[11px] space-y-0.5"
               style={{ scrollbarWidth: 'thin' }}
             >
@@ -314,7 +315,6 @@ export function Sync() {
                   <LogLine msg={l.msg} />
                 </div>
               ))}
-              <div ref={logsEndRef} />
             </div>
 
             <p className="text-[10px] text-slate-400">
@@ -439,6 +439,7 @@ export function Sync() {
 
             {/* Terminal */}
             <div
+              ref={logsMsgContainerRef}
               className="h-40 overflow-y-auto bg-slate-950 rounded p-2.5 font-mono text-[11px] space-y-0.5"
               style={{ scrollbarWidth: 'thin' }}
             >
@@ -451,7 +452,6 @@ export function Sync() {
                   <LogLine msg={l.msg} />
                 </div>
               ))}
-              <div ref={logsEndMsgRef} />
             </div>
 
             {/* Resumo final mensagens */}
@@ -569,6 +569,7 @@ export function Sync() {
 
             {/* Terminal */}
             <div
+              ref={logsIAContainerRef}
               className="h-40 overflow-y-auto bg-slate-950 rounded p-2.5 font-mono text-[11px] space-y-0.5"
               style={{ scrollbarWidth: 'thin' }}
             >
@@ -581,7 +582,6 @@ export function Sync() {
                   <LogLine msg={l.msg} />
                 </div>
               ))}
-              <div ref={logsEndIARef} />
             </div>
 
             {/* Distribuição + tabela de resultados em tempo real */}
@@ -714,6 +714,7 @@ export function Sync() {
           )}
 
           <div
+            ref={logsResyncContainerRef}
             className="h-28 overflow-y-auto bg-slate-950 rounded p-2.5 font-mono text-[11px] space-y-0.5"
             style={{ scrollbarWidth: 'thin' }}
           >
@@ -726,7 +727,6 @@ export function Sync() {
                 <LogLine msg={l.msg} />
               </div>
             ))}
-            <div ref={logsEndResyncRef} />
           </div>
         </div>
 
