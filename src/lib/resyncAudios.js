@@ -38,6 +38,18 @@ export async function resyncAudios(onLog = () => {}, onCancel = null, onProgress
     const conv = conversas[i]
     const nome = conv.contato_nome || conv.id
 
+    const { count } = await supabase
+      .from('ci_mensagens')
+      .select('*', { count: 'exact', head: true })
+      .eq('conversa_id', conv.id)
+      .not('audio_url', 'is', null)
+
+    if (count > 0) {
+      const pct = Math.round(((i + 1) / total) * 100)
+      onProgress?.({ atual: i + 1, total, atualizadas, audiosEncontrados, erros, pct })
+      continue
+    }
+
     try {
       const resultado = await fetchMessages(conv.datacrazy_id)
       const mensagens = Array.isArray(resultado) ? resultado
