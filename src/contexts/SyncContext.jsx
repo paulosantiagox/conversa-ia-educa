@@ -1,7 +1,8 @@
-import { createContext, useContext, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { syncConversas } from '../lib/syncDataCrazy'
 import { syncMensagensModo } from '../lib/syncMensagens'
 import { rodarAnaliseModo } from '../lib/rodarAnalise'
+import { rodarWhisper, contarAudiosPendentes } from '../lib/rodarWhisper'
 
 const SyncContext = createContext(null)
 
@@ -40,7 +41,18 @@ export function SyncProvider({ children }) {
   const [analiseDist, setAnaliseDist] = useState({ quente: 0, morno: 0, frio: 0, vendido: 0, perdido: 0 })
   const cancelAnaliseRef = useRef(false)
 
-  const qualquerAtivo = syncConversasAtivo || syncMensagensAtivo || analiseAtiva
+  // ─── Whisper ───
+  const [whisperAtivo, setWhisperAtivo] = useState(false)
+  const [whisperLogs, setWhisperLogs] = useState([])
+  const [whisperProgresso, setWhisperProgresso] = useState(null)
+  const [whisperResultado, setWhisperResultado] = useState(null)
+  const [whisperPendentes, setWhisperPendentes] = useState(0)
+  const [modoWhisper, setModoWhisper] = useState('teste')
+  const cancelWhisperRef = useRef(false)
+
+  useEffect(() => { contarAudiosPendentes().then(setWhisperPendentes) }, [])
+
+  const qualquerAtivo = syncConversasAtivo || syncMensagensAtivo || analiseAtiva || whisperAtivo
 
   async function iniciarSyncConversas() {
     if (syncConversasAtivo) return null
@@ -126,10 +138,37 @@ export function SyncProvider({ children }) {
 
   function pararAnalise() { cancelAnaliseRef.current = true }
 
+  async function iniciarWhisper(modo) {
+    if (whisperAtivo) return null
+    cancelWhisperRef.current = false
+    setWhisperAtivo(true)
+    setWhisperLogs([])
+    setWhisperProgresso(null)
+    setWhisperResultado(null)
+    try {
+      const resultado = await rodarWhisper(
+        modo,
+        (msg) => pushLog(setWhisperLogs, msg),
+        () => cancelWhisperRef.current,
+        ({ atual, total, pct, concluidas, erros }) =>
+          setWhisperProgresso({ atual, total, pct, concluidas, erros })
+      )
+      setWhisperResultado(resultado)
+      const pendentes = await contarAudiosPendentes()
+      setWhisperPendentes(pendentes)
+      return resultado
+    } finally {
+      setWhisperAtivo(false)
+    }
+  }
+
+  function pararWhisper() { cancelWhisperRef.current = true }
+
   function pararTudo() {
     cancelConversasRef.current = true
     cancelMensagensRef.current = true
     cancelAnaliseRef.current = true
+    cancelWhisperRef.current = true
   }
 
   return (
@@ -140,6 +179,8 @@ export function SyncProvider({ children }) {
       iniciarSyncMensagens, pararSyncMensagens,
       analiseAtiva, analiseProgresso, analiseLogs, analiseResultados, analiseDist,
       iniciarAnalise, pararAnalise,
+      whisperAtivo, whisperLogs, whisperProgresso, whisperResultado, whisperPendentes,
+      modoWhisper, setModoWhisper, iniciarWhisper, pararWhisper,
       qualquerAtivo, pararTudo,
     }}>
       {children}

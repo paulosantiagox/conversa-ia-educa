@@ -8,7 +8,6 @@ import { fetchConversations } from '../../lib/datacrazy'
 import { estimarTempo } from '../../lib/syncMensagens'
 import { contarPendentes, contarAnalisadas } from '../../lib/rodarAnalise'
 import { resyncAudios } from '../../lib/resyncAudios'
-import { rodarWhisper, contarAudiosPendentes } from '../../lib/rodarWhisper'
 
 function StatusBadgeConn({ ok, testando }) {
   if (testando) return (
@@ -107,6 +106,8 @@ export function Sync() {
     iniciarSyncMensagens, pararSyncMensagens,
     analiseAtiva, analiseProgresso, analiseLogs, analiseResultados, analiseDist,
     iniciarAnalise, pararAnalise,
+    whisperAtivo, whisperLogs, whisperProgresso, whisperResultado, whisperPendentes,
+    modoWhisper, setModoWhisper, iniciarWhisper, pararWhisper,
   } = useSync()
 
   // --- Estado local (não precisa persistir) ---
@@ -125,16 +126,7 @@ export function Sync() {
   const resyncCancelRef = useRef(false)
   const logsResyncContainerRef = useRef(null)
 
-  // --- Whisper ---
-  const [whisperAtivo, setWhisperAtivo] = useState(false)
-  const [whisperLogs, setWhisperLogs] = useState([])
-  const [whisperProgresso, setWhisperProgresso] = useState(null)
-  const [whisperResultado, setWhisperResultado] = useState(null)
-  const [whisperPendentes, setWhisperPendentes] = useState(0)
-  const [modoWhisper, setModoWhisper] = useState('teste')
-  const whisperCancelRef = useRef(false)
   const logsWhisperContainerRef = useRef(null)
-
   const logsContainerRef = useRef(null)
   const logsMsgContainerRef = useRef(null)
   const logsIAContainerRef = useRef(null)
@@ -146,7 +138,6 @@ export function Sync() {
   useEffect(() => { if (logsMsgContainerRef.current) logsMsgContainerRef.current.scrollTop = logsMsgContainerRef.current.scrollHeight }, [syncMensagensLogs])
   useEffect(() => { if (logsIAContainerRef.current) logsIAContainerRef.current.scrollTop = logsIAContainerRef.current.scrollHeight }, [analiseLogs])
   useEffect(() => { if (logsResyncContainerRef.current) logsResyncContainerRef.current.scrollTop = logsResyncContainerRef.current.scrollHeight }, [resyncLogs])
-  useEffect(() => { contarAudiosPendentes().then(setWhisperPendentes) }, [])
   useEffect(() => { if (logsWhisperContainerRef.current) logsWhisperContainerRef.current.scrollTop = logsWhisperContainerRef.current.scrollHeight }, [whisperLogs])
 
   async function testarConexao() {
@@ -227,32 +218,6 @@ export function Sync() {
     setResyncResultado(resultado)
     toast.success(`Re-sync concluído: ${resultado.audiosEncontrados} áudios corrigidos`)
     await carregarStats()
-  }
-
-  async function handleRodarWhisper() {
-    whisperCancelRef.current = false
-    setWhisperAtivo(true)
-    setWhisperLogs([])
-    setWhisperProgresso(null)
-    setWhisperResultado(null)
-
-    const addLog = (msg) => {
-      const ts = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      setWhisperLogs(prev => [...prev, { ts, msg }])
-    }
-
-    const resultado = await rodarWhisper(
-      modoWhisper,
-      addLog,
-      () => whisperCancelRef.current,
-      (prog) => setWhisperProgresso(prog)
-    )
-
-    setWhisperAtivo(false)
-    setWhisperResultado(resultado)
-    const pendentes = await contarAudiosPendentes()
-    setWhisperPendentes(pendentes)
-    toast.success(`Whisper: ${resultado.concluidas} transcritos`)
   }
 
   async function handleIniciarAnalise() {
@@ -789,14 +754,14 @@ export function Sync() {
               )}
               {whisperAtivo ? (
                 <button
-                  onClick={() => { whisperCancelRef.current = true }}
+                  onClick={pararWhisper}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors"
                 >
                   <StopCircle size={11} /> Parar
                 </button>
               ) : (
                 <button
-                  onClick={handleRodarWhisper}
+                  onClick={() => iniciarWhisper(modoWhisper)}
                   className="flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-medium bg-pink-600 text-white hover:bg-pink-700 transition-colors"
                 >
                   <Mic size={11} /> Transcrever
