@@ -59,52 +59,80 @@ export function Custos() {
   const [registros, setRegistros] = useState([])
   const [openaiReal, setOpenaiReal] = useState(undefined)
 
+  async function carregarInterno() {
+    const agora = new Date()
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString()
+    const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).toISOString()
+    const inicio14d = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+
+    const [{ data: resMes }, { data: resHoje }, { data: resDias }, { data: resRegistros }] = await Promise.all([
+      supabase.from('ci_uso_api').select('servico, custo_usd').gte('created_at', inicioMes),
+      supabase.from('ci_uso_api').select('custo_usd').gte('created_at', inicioHoje),
+      supabase.from('ci_uso_api').select('created_at, servico, custo_usd').gte('created_at', inicio14d).order('created_at'),
+      supabase.from('ci_uso_api').select('created_at, servico, operacao, tokens_input, tokens_output, custo_usd, duracao_segundos').order('created_at', { ascending: false }).limit(50),
+    ])
+
+    const totalMes = (resMes ?? []).reduce((s, r) => s + (r.custo_usd ?? 0), 0)
+    const anthropicMes = (resMes ?? []).filter(r => r.servico === 'anthropic').reduce((s, r) => s + (r.custo_usd ?? 0), 0)
+    const openaiMes = (resMes ?? []).filter(r => r.servico === 'openai').reduce((s, r) => s + (r.custo_usd ?? 0), 0)
+    const totalHoje = (resHoje ?? []).reduce((s, r) => s + (r.custo_usd ?? 0), 0)
+
+    setResumo({ total: totalMes, anthropic: anthropicMes, openai: openaiMes, hoje: totalHoje })
+
+    const mapa = {}
+    for (const r of resDias ?? []) {
+      const dia = fmtDia(r.created_at)
+      if (!mapa[dia]) mapa[dia] = { dia, anthropic: 0, openai: 0 }
+      if (r.servico === 'anthropic') mapa[dia].anthropic += r.custo_usd ?? 0
+      else mapa[dia].openai += r.custo_usd ?? 0
+    }
+    setGraficoDados(Object.values(mapa))
+    setRegistros(resRegistros ?? [])
+  }
+
   async function carregar() {
     setLoading(true)
     try {
-      const agora = new Date()
-      const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString()
-      const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).toISOString()
-      const inicio14d = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
-
-      const [{ data: resMes }, { data: resHoje }, { data: resDias }, { data: resRegistros }, resOpenAI] = await Promise.all([
-        supabase.from('ci_uso_api').select('servico, custo_usd').gte('created_at', inicioMes),
-        supabase.from('ci_uso_api').select('custo_usd').gte('created_at', inicioHoje),
-        supabase.from('ci_uso_api').select('created_at, servico, custo_usd').gte('created_at', inicio14d).order('created_at'),
-        supabase.from('ci_uso_api').select('created_at, servico, operacao, tokens_input, tokens_output, custo_usd, duracao_segundos').order('created_at', { ascending: false }).limit(50),
+      const [, resOpenAI] = await Promise.all([
+        carregarInterno(),
         fetchOpenAIUsage(30),
       ])
       setOpenaiReal(resOpenAI)
-
-      const totalMes = (resMes ?? []).reduce((s, r) => s + (r.custo_usd ?? 0), 0)
-      const anthropicMes = (resMes ?? []).filter(r => r.servico === 'anthropic').reduce((s, r) => s + (r.custo_usd ?? 0), 0)
-      const openaiMes = (resMes ?? []).filter(r => r.servico === 'openai').reduce((s, r) => s + (r.custo_usd ?? 0), 0)
-      const totalHoje = (resHoje ?? []).reduce((s, r) => s + (r.custo_usd ?? 0), 0)
-
-      setResumo({ total: totalMes, anthropic: anthropicMes, openai: openaiMes, hoje: totalHoje })
-
-      // Agrupar por dia e serviço
-      const mapa = {}
-      for (const r of resDias ?? []) {
-        const dia = fmtDia(r.created_at)
-        if (!mapa[dia]) mapa[dia] = { dia, anthropic: 0, openai: 0 }
-        if (r.servico === 'anthropic') mapa[dia].anthropic += r.custo_usd ?? 0
-        else mapa[dia].openai += r.custo_usd ?? 0
-      }
-      setGraficoDados(Object.values(mapa))
-      setRegistros(resRegistros ?? [])
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { carregar() }, [])
+  useEffect(() => {
+    carregar()
+
+    const channel = supabase
+      .channel('custos-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'ci_uso_api' },
+        () => { carregarInterno() }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900">
       <Topbar titulo="Custos de API" />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+        {/* Indicador realtime */}
+        <div className="flex items-center gap-1.5">
+          <span
+            className="w-1.5 h-1.5 rounded-full animate-pulse"
+            style={{ backgroundColor: '#22c55e' }}
+            title="Atualização em tempo real ativa"
+          />
+          <span className="text-[10px] text-slate-400">tempo real ativo</span>
+        </div>
 
         {/* Metric cards */}
         <div className="grid grid-cols-5 gap-3">
