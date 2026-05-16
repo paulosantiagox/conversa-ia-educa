@@ -17,6 +17,28 @@ function LogLine({ msg }) {
   return <span className={cor}>{msg}</span>
 }
 
+const ESTADO_CORES = {
+  engajada:  { bg: '#dcfce7', text: '#16a34a', border: '#bbf7d0' },
+  mecanica:  { bg: '#f1f5f9', text: '#94a3b8', border: '#e2e8f0' },
+  apatica:   { bg: '#f8fafc', text: '#64748b', border: '#cbd5e1' },
+  ansiosa:   { bg: '#fffbeb', text: '#d97706', border: '#fde68a' },
+  agressiva: { bg: '#fef2f2', text: '#dc2626', border: '#fecaca' },
+  insegura:  { bg: '#fff7ed', text: '#ea580c', border: '#fed7aa' },
+}
+
+function EstadoBadge({ estado }) {
+  if (!estado) return null
+  const cor = ESTADO_CORES[estado] ?? ESTADO_CORES.mecanica
+  return (
+    <span
+      className="inline-block px-1.5 py-0.5 rounded border text-[10px] font-semibold capitalize"
+      style={{ backgroundColor: cor.bg, color: cor.text, borderColor: cor.border }}
+    >
+      {estado}
+    </span>
+  )
+}
+
 function ClassBadge({ cls }) {
   const map = {
     quente:  'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-700',
@@ -236,6 +258,7 @@ export function AnaliseIA() {
                     <th className="px-3 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase">Consultora</th>
                     <th className="px-3 py-1.5 text-center text-[10px] font-semibold text-slate-500 uppercase w-28">Score</th>
                     <th className="px-3 py-1.5 text-center text-[10px] font-semibold text-slate-500 uppercase">Classif.</th>
+                    <th className="px-3 py-1.5 text-center text-[10px] font-semibold text-slate-500 uppercase">Estado</th>
                     <th className="px-3 py-1.5 text-right text-[10px] font-semibold text-slate-500 uppercase">Chance</th>
                   </tr>
                 </thead>
@@ -254,6 +277,9 @@ export function AnaliseIA() {
                       </td>
                       <td className="px-3 py-1.5 text-center">
                         <ClassBadge cls={r.classificacao_ia} />
+                      </td>
+                      <td className="px-3 py-1.5 text-center">
+                        <EstadoBadge estado={r.estado_consultora} />
                       </td>
                       <td className="px-3 py-1.5 text-right text-[12px] font-semibold text-green-600">{r.chance_fechamento}%</td>
                     </tr>

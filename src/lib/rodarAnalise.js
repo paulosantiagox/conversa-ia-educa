@@ -101,6 +101,7 @@ export async function rodarAnaliseModo(modo = 'teste', onLog = () => {}, onCance
           erros_consultora: analise.erros_consultora ?? [],
           sugestoes_ia: analise.sugestoes_ia ?? [],
           proxima_melhor_resposta: analise.proxima_melhor_resposta,
+          estado_consultora: analise.estado_consultora ?? null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', conv.id)
@@ -116,6 +117,7 @@ export async function rodarAnaliseModo(modo = 'teste', onLog = () => {}, onCance
         score_ia: analise.score_ia,
         classificacao_ia: analise.classificacao_ia,
         chance_fechamento: analise.chance_fechamento,
+        estado_consultora: analise.estado_consultora ?? null,
         tempo_resposta_medio: conv.tempo_resposta_medio,
       }
       resultados.push(resultado)
@@ -254,6 +256,7 @@ export async function rodarAnaliseIA(onLog = () => {}, onCancel = null, onProgre
             erros_consultora: analise.erros_consultora ?? [],
             sugestoes_ia: analise.sugestoes_ia ?? [],
             proxima_melhor_resposta: analise.proxima_melhor_resposta,
+            estado_consultora: analise.estado_consultora ?? null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', conv.id)
