@@ -62,7 +62,7 @@ export async function rodarWhisper(modo = 'teste', onLog = () => {}, onCancel = 
       }
 
       onLog(`ℹ [${i + 1}/${total}] Transcrevendo...`)
-      const transcricao = await transcreverAudio(audio.audio_url, audio.datacrazy_id)
+      const { text: transcricao, duracao_segundos } = await transcreverAudio(audio.audio_url, audio.datacrazy_id)
 
       await supabase
         .from('ci_mensagens')
@@ -73,7 +73,8 @@ export async function rodarWhisper(modo = 'teste', onLog = () => {}, onCancel = 
         servico: 'openai',
         operacao: 'transcricao_audio',
         modelo: 'whisper-1',
-        custo_usd: 0.006 / 60,
+        custo_usd: (duracao_segundos / 60) * 0.006,
+        duracao_segundos: duracao_segundos ?? 0,
         conversa_id: audio.conversa_id ?? null,
       })
 

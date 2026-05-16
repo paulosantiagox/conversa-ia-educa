@@ -9,6 +9,7 @@ export async function transcreverAudio(audioUrl, datacrazy_id) {
   form.append('file', audioBlob, `${datacrazy_id}.ogg`)
   form.append('model', 'whisper-1')
   form.append('language', 'pt')
+  form.append('response_format', 'verbose_json')
 
   const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
     method: 'POST',
@@ -22,5 +23,5 @@ export async function transcreverAudio(audioUrl, datacrazy_id) {
   }
 
   const data = await res.json()
-  return data.text ?? ''
+  return { text: data.text ?? '', duracao_segundos: data.duration ?? 0 }
 }
