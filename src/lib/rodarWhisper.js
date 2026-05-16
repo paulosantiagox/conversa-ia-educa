@@ -80,8 +80,17 @@ export async function rodarWhisper(modo = 'teste', onLog = () => {}, onCancel = 
       concluidas++
       onLog(`✓ [${i + 1}/${total}] ${transcricao.substring(0, 60)}...`)
     } catch (err) {
-      erros++
-      onLog(`⚠ [${i + 1}/${total}] Erro: ${err.message}`)
+      const isFetchError = /fetch|network|Failed|NetworkError/i.test(err.message) || err.status === 403 || err.status === 404
+      if (isFetchError) {
+        await supabase
+          .from('ci_mensagens')
+          .update({ transcricao: '[inacessível]' })
+          .eq('id', audio.id)
+        onLog(`⚠ [${i + 1}/${total}] URL inacessível — marcada para pular`)
+      } else {
+        erros++
+        onLog(`⚠ [${i + 1}/${total}] Erro: ${err.message}`)
+      }
     }
 
     onProgress?.({ atual: i + 1, total, concluidas, erros, pct: Math.round(((i + 1) / total) * 100) })
