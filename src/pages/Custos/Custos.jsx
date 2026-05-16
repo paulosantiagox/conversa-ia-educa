@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, Zap, Mic, RefreshCw } from 'lucide-react'
+import { DollarSign, TrendingUp, Zap, Mic, RefreshCw, ExternalLink } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Topbar } from '../../components/layout/Topbar'
 import { supabase } from '../../lib/supabase'
+import { fetchOpenAIUsage } from '../../lib/openaiUsage'
+
+const ADMIN_KEY_CONFIGURADA = !!import.meta.env.VITE_OPENAI_ADMIN_KEY
 
 const USD_BRL = 5.75
 
@@ -46,7 +49,7 @@ function fmtDia(iso) {
 
 function fmtDt(iso) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 export function Custos() {
@@ -54,6 +57,7 @@ export function Custos() {
   const [resumo, setResumo] = useState({ total: 0, anthropic: 0, openai: 0, hoje: 0 })
   const [graficoDados, setGraficoDados] = useState([])
   const [registros, setRegistros] = useState([])
+  const [openaiReal, setOpenaiReal] = useState(undefined)
 
   async function carregar() {
     setLoading(true)
@@ -63,12 +67,14 @@ export function Custos() {
       const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).toISOString()
       const inicio14d = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
 
-      const [{ data: resMes }, { data: resHoje }, { data: resDias }, { data: resRegistros }] = await Promise.all([
+      const [{ data: resMes }, { data: resHoje }, { data: resDias }, { data: resRegistros }, resOpenAI] = await Promise.all([
         supabase.from('ci_uso_api').select('servico, custo_usd').gte('created_at', inicioMes),
         supabase.from('ci_uso_api').select('custo_usd').gte('created_at', inicioHoje),
         supabase.from('ci_uso_api').select('created_at, servico, custo_usd').gte('created_at', inicio14d).order('created_at'),
-        supabase.from('ci_uso_api').select('created_at, servico, operacao, tokens_input, tokens_output, custo_usd, duration_ms').order('created_at', { ascending: false }).limit(50),
+        supabase.from('ci_uso_api').select('created_at, servico, operacao, tokens_input, tokens_output, custo_usd, duracao_segundos').order('created_at', { ascending: false }).limit(50),
+        fetchOpenAIUsage(30),
       ])
+      setOpenaiReal(resOpenAI)
 
       const totalMes = (resMes ?? []).reduce((s, r) => s + (r.custo_usd ?? 0), 0)
       const anthropicMes = (resMes ?? []).filter(r => r.servico === 'anthropic').reduce((s, r) => s + (r.custo_usd ?? 0), 0)
@@ -101,7 +107,7 @@ export function Custos() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
         {/* Metric cards */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-5 gap-3">
           <MetricCard
             label="Hoje"
             value={fmtShort(resumo.hoje)}
@@ -127,14 +133,54 @@ export function Custos() {
             color="text-purple-500"
           />
           <MetricCard
-            label="OpenAI"
+            label="OpenAI Estimado"
             value={fmtShort(resumo.openai)}
             valueBrl={fmtBRLSimples(resumo.openai)}
-            sub="Whisper — transcrições"
+            sub="Whisper — estimativa"
             icon={Mic}
             color="text-pink-500"
           />
+          {/* Card OpenAI Real */}
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">OpenAI Real</span>
+              <ExternalLink size={14} className="text-emerald-500" />
+            </div>
+            {!ADMIN_KEY_CONFIGURADA ? (
+              <div>
+                <p className="text-[13px] font-semibold text-slate-400 leading-none">Não configurada</p>
+                <a
+                  href="https://platform.openai.com/settings/organization/api-keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-blue-400 hover:underline mt-1 inline-block"
+                >
+                  Gerar admin key →
+                </a>
+              </div>
+            ) : openaiReal?.erro === 'sem_permissao' ? (
+              <p className="text-[12px] text-red-400 font-medium">Sem permissão — admin key necessária</p>
+            ) : openaiReal?.total_usd != null ? (
+              <div>
+                <p className="text-[22px] font-bold text-slate-800 dark:text-slate-100 leading-none">{fmtShort(openaiReal.total_usd)}</p>
+                <p className="text-[11px] text-slate-400 leading-none mt-0.5">{fmtBRLSimples(openaiReal.total_usd)}</p>
+                <p className="text-[11px] text-slate-400 mt-1">cobrado — últimos 30 dias</p>
+              </div>
+            ) : (
+              <p className="text-[13px] text-slate-400">Carregando...</p>
+            )}
+          </div>
         </div>
+
+        {/* Linha comparativa OpenAI estimado vs real */}
+        {openaiReal?.total_usd != null && resumo.openai != null && (
+          <p className="text-[10px] text-slate-400 -mt-2">
+            OpenAI — Estimado pelo sistema: {fmtShort(resumo.openai)} | Cobrado pela OpenAI: {fmtShort(openaiReal.total_usd)} | Diferença:{' '}
+            <span className={(openaiReal.total_usd - resumo.openai) > 0.001 ? 'text-amber-400' : 'text-green-400'}>
+              {fmtShort(Math.abs(openaiReal.total_usd - resumo.openai))}
+            </span>
+          </p>
+        )}
         <p className="text-[10px] text-slate-400 -mt-2">Cotação aproximada: 1 USD = R$ 5,75</p>
 
         {/* Gráfico */}
@@ -213,7 +259,7 @@ export function Custos() {
                     <td className="px-3 py-1.5 text-right text-slate-500 dark:text-slate-400">{r.tokens_input > 0 ? r.tokens_input.toLocaleString('pt-BR') : '—'}</td>
                     <td className="px-3 py-1.5 text-right text-slate-500 dark:text-slate-400">{r.tokens_output > 0 ? r.tokens_output.toLocaleString('pt-BR') : '—'}</td>
                     <td className="px-3 py-1.5 text-right text-slate-500 dark:text-slate-400">
-                      {r.duration_ms > 0 ? `${(r.duration_ms / 1000).toFixed(1)}s` : '—'}
+                      {r.duracao_segundos > 0 ? `${Number(r.duracao_segundos).toFixed(1)}s` : '—'}
                     </td>
                     <td className="px-3 py-1.5 text-right font-mono">
                       <span className="text-slate-700 dark:text-slate-200">{fmt(r.custo_usd)}</span>
