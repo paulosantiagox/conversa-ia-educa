@@ -8,7 +8,7 @@ function tocar(notas) {
       gain.connect(ctx.destination)
       osc.type = 'sine'
       osc.frequency.value = freq
-      gain.gain.setValueAtTime(0.08, ctx.currentTime + inicio)
+      gain.gain.setValueAtTime(0.7, ctx.currentTime + inicio)
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + inicio + duracao)
       osc.start(ctx.currentTime + inicio)
       osc.stop(ctx.currentTime + inicio + duracao)
