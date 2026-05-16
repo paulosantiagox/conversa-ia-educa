@@ -3,6 +3,12 @@ import { syncConversas } from '../lib/syncDataCrazy'
 import { syncMensagensModo } from '../lib/syncMensagens'
 import { rodarAnaliseModo } from '../lib/rodarAnalise'
 import { rodarWhisper, contarAudiosPendentes } from '../lib/rodarWhisper'
+import {
+  somConversaImportada,
+  somMensagensSincronizadas,
+  somAudioTranscrito,
+  somAnaliseIA,
+} from '../lib/somSync'
 
 const SyncContext = createContext(null)
 
@@ -10,12 +16,20 @@ export function useSync() {
   return useContext(SyncContext)
 }
 
-function pushLog(setter, msg) {
+const SONS = {
+  conversas: somConversaImportada,
+  mensagens: somMensagensSincronizadas,
+  whisper:   somAudioTranscrito,
+  analise:   somAnaliseIA,
+}
+
+function pushLog(setter, msg, tipo) {
   setter(prev => {
     const entry = { ts: new Date().toLocaleTimeString('pt-BR'), msg }
     const next = [...prev, entry]
     return next.length > 500 ? next.slice(-500) : next
   })
+  if (msg.startsWith('✓') && tipo && SONS[tipo]) SONS[tipo]()
 }
 
 export function SyncProvider({ children }) {
@@ -63,7 +77,7 @@ export function SyncProvider({ children }) {
     setSyncConversasLogs([])
     try {
       const resultado = await syncConversas(
-        (msg) => pushLog(setSyncConversasLogs, msg),
+        (msg) => pushLog(setSyncConversasLogs, msg, 'conversas'),
         () => cancelConversasRef.current,
         ({ pct, processadas, estimadas }) =>
           setSyncConversasProgresso({ pct, processadas, estimadas })
@@ -91,7 +105,7 @@ export function SyncProvider({ children }) {
     try {
       const resultado = await syncMensagensModo(
         modo,
-        (msg) => pushLog(setSyncMensagensLogs, msg),
+        (msg) => pushLog(setSyncMensagensLogs, msg, 'mensagens'),
         () => cancelMensagensRef.current,
         ({ atual, total, pct }) => setSyncMensagensProgresso({ pct, atual, total })
       )
@@ -116,7 +130,7 @@ export function SyncProvider({ children }) {
     try {
       const resultado = await rodarAnaliseModo(
         modo,
-        (msg) => pushLog(setAnaliseLogs, msg),
+        (msg) => pushLog(setAnaliseLogs, msg, 'analise'),
         () => cancelAnaliseRef.current,
         ({ atual, total, pct, ultimoResultado }) => {
           setAnaliseProgresso({ pct, atual, total })
@@ -148,7 +162,7 @@ export function SyncProvider({ children }) {
     try {
       const resultado = await rodarWhisper(
         modo,
-        (msg) => pushLog(setWhisperLogs, msg),
+        (msg) => pushLog(setWhisperLogs, msg, 'whisper'),
         () => cancelWhisperRef.current,
         ({ atual, total, pct, concluidas, erros }) =>
           setWhisperProgresso({ atual, total, pct, concluidas, erros })
