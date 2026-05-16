@@ -4,7 +4,17 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Topbar } from '../../components/layout/Topbar'
 import { supabase } from '../../lib/supabase'
 
-function MetricCard({ label, value, sub, icon: Icon, color }) {
+const USD_BRL = 5.75
+
+function fmtBRL(val) {
+  return `R$ ${(Number(val ?? 0) * USD_BRL).toFixed(4)}`
+}
+
+function fmtBRLSimples(val) {
+  return `R$ ${(Number(val ?? 0) * USD_BRL).toFixed(2)}`
+}
+
+function MetricCard({ label, value, valueBrl, sub, icon: Icon, color }) {
   return (
     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] p-3">
       <div className="flex items-center justify-between mb-2">
@@ -12,6 +22,7 @@ function MetricCard({ label, value, sub, icon: Icon, color }) {
         <Icon size={14} className={color} />
       </div>
       <p className="text-[22px] font-bold text-slate-800 dark:text-slate-100 leading-none">{value}</p>
+      {valueBrl && <p className="text-[11px] text-slate-400 leading-none mt-0.5">{valueBrl}</p>}
       {sub && <p className="text-[11px] text-slate-400 mt-1">{sub}</p>}
     </div>
   )
@@ -56,7 +67,7 @@ export function Custos() {
         supabase.from('ci_uso_api').select('servico, custo_usd').gte('created_at', inicioMes),
         supabase.from('ci_uso_api').select('custo_usd').gte('created_at', inicioHoje),
         supabase.from('ci_uso_api').select('created_at, servico, custo_usd').gte('created_at', inicio14d).order('created_at'),
-        supabase.from('ci_uso_api').select('created_at, servico, operacao, tokens_input, tokens_output, custo_usd').order('created_at', { ascending: false }).limit(50),
+        supabase.from('ci_uso_api').select('created_at, servico, operacao, tokens_input, tokens_output, custo_usd, duration_ms').order('created_at', { ascending: false }).limit(50),
       ])
 
       const totalMes = (resMes ?? []).reduce((s, r) => s + (r.custo_usd ?? 0), 0)
@@ -94,6 +105,7 @@ export function Custos() {
           <MetricCard
             label="Hoje"
             value={fmtShort(resumo.hoje)}
+            valueBrl={fmtBRLSimples(resumo.hoje)}
             sub="gasto hoje (USD)"
             icon={DollarSign}
             color="text-slate-400"
@@ -101,6 +113,7 @@ export function Custos() {
           <MetricCard
             label="Mês atual"
             value={fmtShort(resumo.total)}
+            valueBrl={fmtBRLSimples(resumo.total)}
             sub="total do mês (USD)"
             icon={TrendingUp}
             color="text-blue-500"
@@ -108,6 +121,7 @@ export function Custos() {
           <MetricCard
             label="Anthropic"
             value={fmtShort(resumo.anthropic)}
+            valueBrl={fmtBRLSimples(resumo.anthropic)}
             sub="Claude Sonnet — análises IA"
             icon={Zap}
             color="text-purple-500"
@@ -115,11 +129,13 @@ export function Custos() {
           <MetricCard
             label="OpenAI"
             value={fmtShort(resumo.openai)}
+            valueBrl={fmtBRLSimples(resumo.openai)}
             sub="Whisper — transcrições"
             icon={Mic}
             color="text-pink-500"
           />
         </div>
+        <p className="text-[10px] text-slate-400 -mt-2">Cotação aproximada: 1 USD = R$ 5,75</p>
 
         {/* Gráfico */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] p-3">
@@ -145,7 +161,7 @@ export function Custos() {
                 <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `$${v.toFixed(4)}`} width={68} />
                 <Tooltip
                   contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #e2e8f0' }}
-                  formatter={(v, name) => [`$ ${Number(v).toFixed(6)}`, name === 'anthropic' ? 'Anthropic' : 'OpenAI']}
+                  formatter={(v, name) => [`$ ${Number(v).toFixed(6)} (${fmtBRL(v)})`, name === 'anthropic' ? 'Anthropic' : 'OpenAI']}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} formatter={v => v === 'anthropic' ? 'Anthropic' : 'OpenAI'} />
                 <Bar dataKey="anthropic" fill="#6366f1" radius={[2, 2, 0, 0]} maxBarSize={32} />
@@ -169,15 +185,16 @@ export function Custos() {
                   <th className="text-left px-3 py-2 font-semibold text-slate-500 dark:text-slate-400">Operação</th>
                   <th className="text-right px-3 py-2 font-semibold text-slate-500 dark:text-slate-400">Tokens in</th>
                   <th className="text-right px-3 py-2 font-semibold text-slate-500 dark:text-slate-400">Tokens out</th>
-                  <th className="text-right px-3 py-2 font-semibold text-slate-500 dark:text-slate-400">Custo USD</th>
+                  <th className="text-right px-3 py-2 font-semibold text-slate-500 dark:text-slate-400">Duração</th>
+                  <th className="text-right px-3 py-2 font-semibold text-slate-500 dark:text-slate-400">Custo</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
-                  <tr><td colSpan={6} className="px-3 py-6 text-center text-slate-400">Carregando...</td></tr>
+                  <tr><td colSpan={7} className="px-3 py-6 text-center text-slate-400">Carregando...</td></tr>
                 )}
                 {!loading && registros.length === 0 && (
-                  <tr><td colSpan={6} className="px-3 py-6 text-center text-slate-400">Nenhum registro ainda. Execute análises IA ou transcrições Whisper para ver os custos aqui.</td></tr>
+                  <tr><td colSpan={7} className="px-3 py-6 text-center text-slate-400">Nenhum registro ainda. Execute análises IA ou transcrições Whisper para ver os custos aqui.</td></tr>
                 )}
                 {registros.map((r, i) => (
                   <tr key={i} className="border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
@@ -195,7 +212,14 @@ export function Custos() {
                     <td className="px-3 py-1.5 text-slate-600 dark:text-slate-300">{r.operacao}</td>
                     <td className="px-3 py-1.5 text-right text-slate-500 dark:text-slate-400">{r.tokens_input > 0 ? r.tokens_input.toLocaleString('pt-BR') : '—'}</td>
                     <td className="px-3 py-1.5 text-right text-slate-500 dark:text-slate-400">{r.tokens_output > 0 ? r.tokens_output.toLocaleString('pt-BR') : '—'}</td>
-                    <td className="px-3 py-1.5 text-right font-mono text-slate-700 dark:text-slate-200">{fmt(r.custo_usd)}</td>
+                    <td className="px-3 py-1.5 text-right text-slate-500 dark:text-slate-400">
+                      {r.duration_ms > 0 ? `${(r.duration_ms / 1000).toFixed(1)}s` : '—'}
+                    </td>
+                    <td className="px-3 py-1.5 text-right font-mono">
+                      <span className="text-slate-700 dark:text-slate-200">{fmt(r.custo_usd)}</span>
+                      <br />
+                      <span className="text-[10px] text-slate-400">{fmtBRL(r.custo_usd)}</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
