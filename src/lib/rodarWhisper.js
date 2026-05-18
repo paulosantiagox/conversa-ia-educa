@@ -107,13 +107,18 @@ export async function rodarWhisper(modo = 'teste', onLog = () => {}, onCancel = 
   }
 
   // COMPLETO: paginação — busca lotes de 1000 até zerar os pendentes
-  const totalPendentes = await contarAudiosPendentes()
-  onLog(`ℹ ${totalPendentes} áudios pendentes no total`)
+  let totalEstimado = await contarAudiosPendentes()
+  if (!totalEstimado) {
+    // fallback: busca primeiro lote para estimar
+    const { data: primeiro } = await buscarLote(LOTE)
+    totalEstimado = primeiro?.length === LOTE ? 99999 : (primeiro?.length ?? 0)
+  }
+  onLog(`ℹ ~${totalEstimado} áudios pendentes`)
 
   let concluidas = 0
   let erros = 0
   let processados = 0
-  const total = totalPendentes
+  let total = totalEstimado
 
   while (true) {
     if (onCancel?.()) { onLog('⛔ Interrompido.'); break }

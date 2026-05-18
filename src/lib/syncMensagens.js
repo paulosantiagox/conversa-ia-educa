@@ -36,55 +36,97 @@ async function buscarConversasModo(modo) {
   return data ?? []
 }
 
+const LOTE = 1000
+
 export async function syncMensagensModo(modo = 'teste', onLog = () => {}, onCancel = null, onProgress = null) {
   onLog(`ℹ Modo: ${modo.toUpperCase()} — ${estimarTempo(modo)}`)
 
-  let conversas
-  try {
-    conversas = await buscarConversasModo(modo)
-  } catch (err) {
-    onLog(`✗ ${err.message}`)
-    return { total: 0, mensagensImportadas: 0, erros: 0 }
-  }
-
-  const total = conversas.length
-  onLog(`ℹ ${total} conversas selecionadas para sync de mensagens.`)
-
-  if (total === 0) {
-    onLog('✓ Nenhuma conversa pendente neste modo.')
-    return { total: 0, mensagensImportadas: 0, erros: 0 }
-  }
-
-  let atual = 0
   let mensagensImportadas = 0
   let erros = 0
+  let processados = 0
 
-  for (const conv of conversas) {
-    if (onCancel && onCancel()) {
-      onLog('⛔ Sync de mensagens interrompido pelo usuário.')
-      break
-    }
-
-    const nome = conv.contato_nome || conv.contato_numero || conv.id
-    onLog(`ℹ [${atual + 1}/${total}] ${nome}`)
-
+  // Teste e recentes: busca única sem loop
+  if (modo !== 'completo') {
+    let conversas
     try {
-      const { total: imp, erros: e } = await syncMensagensConversa(conv, onLog)
-      mensagensImportadas += imp
-      erros += e
-      if (imp > 0) onLog(`✓ ${nome} → ${imp} mensagens`)
+      conversas = await buscarConversasModo(modo)
     } catch (err) {
-      erros++
-      onLog(`✗ Erro em ${nome}: ${err.message}`)
+      onLog(`✗ ${err.message}`)
+      return { total: 0, mensagensImportadas: 0, erros: 0 }
     }
 
-    atual++
-    const pct = Math.round((atual / total) * 100)
-    if (onProgress) onProgress({ atual, total, mensagensImportadas, erros, pct })
+    const total = conversas.length
+    onLog(`ℹ ${total} conversas selecionadas para sync de mensagens.`)
+    if (total === 0) { onLog('✓ Nenhuma conversa pendente neste modo.'); return { total: 0, mensagensImportadas: 0, erros: 0 } }
 
-    await delay(1000)
+    for (const conv of conversas) {
+      if (onCancel?.()) { onLog('⛔ Sync de mensagens interrompido pelo usuário.'); break }
+      const nome = conv.contato_nome || conv.contato_numero || conv.id
+      try {
+        const { total: imp, erros: e } = await syncMensagensConversa(conv, onLog)
+        mensagensImportadas += imp; erros += e
+        onLog(`✓ [${processados + 1}/${total}] ${nome}${imp > 0 ? ` → ${imp} novas` : ''}`)
+      } catch (err) {
+        erros++
+        onLog(`✗ Erro em ${nome}: ${err.message}`)
+      }
+      processados++
+      onProgress?.({ atual: processados, total, mensagensImportadas, erros, pct: Math.round((processados / total) * 100) })
+      await delay(1000)
+    }
+
+    onLog(`✓ Sync mensagens concluído: ${mensagensImportadas} importadas | ${erros} erros`)
+    return { total: processados, mensagensImportadas, erros }
+  }
+
+  // COMPLETO: loop em lotes de 1000 até zerar pendentes
+  const totalPendentes = await supabase
+    .from('ci_conversas').select('*', { count: 'exact', head: true })
+    .not('datacrazy_id', 'is', null).eq('total_mensagens', 0)
+  const total = totalPendentes.count ?? 0
+  onLog(`ℹ ${total} conversas pendentes no total`)
+
+  while (true) {
+    if (onCancel?.()) { onLog('⛔ Sync de mensagens interrompido pelo usuário.'); break }
+
+    let lote
+    try {
+      const { data, error } = await supabase
+        .from('ci_conversas')
+        .select('id, datacrazy_id, contato_nome, contato_numero, consultora, total_mensagens, ultima_mensagem_at')
+        .not('datacrazy_id', 'is', null)
+        .eq('total_mensagens', 0)
+        .order('ultima_mensagem_at', { ascending: false })
+        .limit(LOTE)
+      if (error) { onLog(`✗ ${error.message}`); break }
+      lote = data ?? []
+    } catch (err) {
+      onLog(`✗ ${err.message}`); break
+    }
+
+    if (!lote.length) { onLog('ℹ Nenhuma conversa pendente restante.'); break }
+    onLog(`ℹ Lote: ${lote.length} conversas (${processados} processadas até agora)`)
+
+    for (const conv of lote) {
+      if (onCancel?.()) { onLog('⛔ Sync de mensagens interrompido pelo usuário.'); break }
+      const nome = conv.contato_nome || conv.contato_numero || conv.id
+      try {
+        const { total: imp, erros: e } = await syncMensagensConversa(conv, onLog)
+        mensagensImportadas += imp; erros += e
+        onLog(`✓ [${processados + 1}/${total}] ${nome}${imp > 0 ? ` → ${imp} novas` : ''}`)
+      } catch (err) {
+        erros++
+        onLog(`✗ Erro em ${nome}: ${err.message}`)
+      }
+      processados++
+      onProgress?.({ atual: processados, total, mensagensImportadas, erros, pct: Math.round((processados / total) * 100) })
+      await delay(1000)
+    }
+
+    if (onCancel?.()) break
+    if (lote.length < LOTE) break
   }
 
   onLog(`✓ Sync mensagens concluído: ${mensagensImportadas} importadas | ${erros} erros`)
-  return { total, mensagensImportadas, erros }
+  return { total: processados, mensagensImportadas, erros }
 }
