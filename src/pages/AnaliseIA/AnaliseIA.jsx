@@ -73,7 +73,7 @@ export function AnaliseIA() {
   }
 
   function addLog(msg) {
-    setLogs(prev => [...prev, { ts: new Date().toLocaleTimeString('pt-BR'), msg }])
+    setLogs(prev => [...prev, { ts: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }), msg }])
   }
 
   function handleProgress({ atual, total, concluidas, erros, pct, ultimoResultado }) {

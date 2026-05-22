@@ -2,25 +2,27 @@ import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, MessageSquare, Flame, Bell, TrendingUp, Trophy,
-  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap, Settings, RefreshCw, DollarSign
+  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap, Settings, RefreshCw, DollarSign, UserCheck
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 function useBadges() {
-  const [badges, setBadges] = useState({ inbox: 0, quentes: 0, alertas: 0, followups: 0 })
+  const [badges, setBadges] = useState({ inbox: 0, quentes: 0, alertas: 0, followups: 0, matriculados: 0 })
 
   async function buscar() {
-    const [inbox, quentes, alertas, followups] = await Promise.all([
+    const [inbox, quentes, alertas, followups, matriculados] = await Promise.all([
       supabase.from('ci_conversas').select('*', { count: 'exact', head: true }).or('classificacao_ia.is.null,and(classificacao_ia.neq.vendido,classificacao_ia.neq.perdido)'),
       supabase.from('ci_conversas').select('*', { count: 'exact', head: true }).eq('classificacao_ia', 'quente'),
       supabase.from('ci_alertas').select('*', { count: 'exact', head: true }).eq('lido', false),
       supabase.from('ci_followups').select('*', { count: 'exact', head: true }).eq('status', 'pendente'),
+      supabase.from('ci_conversas').select('*', { count: 'exact', head: true }).eq('classificacao_ia', 'vendido'),
     ])
     setBadges({
-      inbox:    inbox.count    ?? 0,
-      quentes:  quentes.count  ?? 0,
-      alertas:  alertas.count  ?? 0,
-      followups: followups.count ?? 0,
+      inbox:       inbox.count       ?? 0,
+      quentes:     quentes.count     ?? 0,
+      alertas:     alertas.count     ?? 0,
+      followups:   followups.count   ?? 0,
+      matriculados: matriculados.count ?? 0,
     })
   }
 
@@ -59,7 +61,8 @@ export function Sidebar() {
       items: [
         { to: '/funil',   label: 'Funil',       icon: TrendingUp },
         { to: '/ranking', label: 'Ranking',      icon: Trophy },
-        { to: '/followup',label: 'Follow-up IA', icon: Sparkles, badge: badges.followups, badgeColor: 'bg-purple-500' },
+        { to: '/followup',     label: 'Follow-up IA',  icon: Sparkles,   badge: badges.followups,    badgeColor: 'bg-purple-500' },
+        { to: '/matriculados', label: 'Matriculados',  icon: UserCheck,  badge: badges.matriculados, badgeColor: 'bg-green-500' },
       ],
     },
     {

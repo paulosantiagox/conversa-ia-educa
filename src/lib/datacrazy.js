@@ -39,4 +39,17 @@ export function mapConversation(conv) {
   }
 }
 
+export async function enviarMensagem(conversationId, texto) {
+  const res = await fetch(`${BASE_URL}/api/v1/conversations/${conversationId}/messages`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ body: texto }),
+  })
+  if (!res.ok) throw new Error(`DataCrazy ${res.status}: enviar mensagem`)
+  return res.json()
+}
+
 export const delay = (ms) => new Promise((r) => setTimeout(r, ms))

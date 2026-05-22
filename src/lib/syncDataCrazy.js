@@ -289,11 +289,12 @@ export async function organizarDadosConversa(conversaId, mensagens) {
     }
   }
 
-  // Janela 24h: última mensagem do lead
+  // Janela 24h: baseada na última mensagem DO LEAD (não da consultora)
   const ultimaNormLead = [...normalizadas].reverse().find(m => m.isLead && m.ts)
+  const ultimaMensagemLeadAt = ultimaNormLead?.ts ?? null
   let janela24hStatus = 'sem_interacao'
-  if (ultimaNormLead?.ts) {
-    const horasPassadas = (Date.now() - new Date(ultimaNormLead.ts).getTime()) / 3600000
+  if (ultimaMensagemLeadAt) {
+    const horasPassadas = (Date.now() - new Date(ultimaMensagemLeadAt).getTime()) / 3600000
     if (horasPassadas < 20) janela24hStatus = 'aberta'
     else if (horasPassadas < 24) janela24hStatus = 'critica'
     else janela24hStatus = 'expirada'
@@ -303,6 +304,7 @@ export async function organizarDadosConversa(conversaId, mensagens) {
     total_mensagens: totalMensagens,
     primeira_msg_automatica: primeiraMsgAutomatica,
     janela_24h_status: janela24hStatus,
+    ultima_mensagem_lead_at: ultimaMensagemLeadAt,
     updated_at: new Date().toISOString(),
   }
   if (tempoRespostaMedio !== null) updates.tempo_resposta_medio = tempoRespostaMedio

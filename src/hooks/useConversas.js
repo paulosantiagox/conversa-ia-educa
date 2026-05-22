@@ -1,54 +1,73 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { CONVERSAS } from '../lib/mockData'
 
-const USE_MOCK = false
+const PAGE_SIZE = 50
 
 export function useConversas(filtros = {}) {
   const [conversas, setConversas] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [total, setTotal] = useState(null)
+  const pageRef = useRef(0)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  function buildQuery(from, to) {
+    let q = supabase
+      .from('ci_conversas')
+      .select('*', { count: 'exact' })
+      .gt('total_mensagens', 0)
+      .not('datacrazy_id', 'is', null)
+      .order('ultima_mensagem_at', { ascending: false })
+      .range(from, to)
+
+    if (filtros.consultora) q = q.eq('consultora', filtros.consultora)
+    if (filtros.classificacao) q = q.eq('classificacao_ia', filtros.classificacao)
+    if (filtros.busca) q = q.or(
+      `contato_nome.ilike.%${filtros.busca}%,contato_numero.ilike.%${filtros.busca}%,ultima_mensagem_texto.ilike.%${filtros.busca}%`
+    )
+    return q
+  }
 
   useEffect(() => {
-    if (USE_MOCK) {
-      setConversas(CONVERSAS)
-      setLoading(false)
-      return
-    }
+    pageRef.current = 0
+    setConversas([])
+    setHasMore(true)
+    setTotal(null)
 
-    async function fetchConversas() {
+    async function fetchFirst() {
       setLoading(true)
-      setError(null)
-      try {
-        let query = supabase
-          .from('ci_conversas')
-          .select('*')
-          .gt('total_mensagens', 0)
-          .order('ultima_mensagem_at', { ascending: false })
-          .not('datacrazy_id', 'is', null)
-
-        if (filtros.status) query = query.eq('status', filtros.status)
-        if (filtros.consultora) query = query.eq('consultora', filtros.consultora)
-        if (filtros.classificacao) query = query.eq('classificacao_ia', filtros.classificacao)
-        if (filtros.busca) {
-          query = query.or(
-            `contato_nome.ilike.%${filtros.busca}%,contato_numero.ilike.%${filtros.busca}%,ultima_mensagem_texto.ilike.%${filtros.busca}%`
-          )
-        }
-
-        const { data, error: err } = await query
-        if (err) throw err
-        setConversas(data || [])
-      } catch (err) {
-        console.error('[useConversas] erro:', err.message || err)
-        setError(err.message)
-      } finally {
-        setLoading(false)
+      const { data, error, count } = await buildQuery(0, PAGE_SIZE - 1)
+      if (!error) {
+        setConversas(data ?? [])
+        setTotal(count)
+        setHasMore((data?.length ?? 0) === PAGE_SIZE)
+        pageRef.current = 1
       }
+      setLoading(false)
     }
+    fetchFirst()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtros.consultora, filtros.classificacao, filtros.busca, refreshKey])
 
-    fetchConversas()
-  }, [filtros.status, filtros.consultora, filtros.classificacao, filtros.busca])
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    const from = pageRef.current * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
+    const { data, error } = await buildQuery(from, to)
+    if (!error && data?.length) {
+      setConversas(prev => [...prev, ...data])
+      setHasMore(data.length === PAGE_SIZE)
+      pageRef.current += 1
+    } else {
+      setHasMore(false)
+    }
+    setLoadingMore(false)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingMore, hasMore, filtros.consultora, filtros.classificacao, filtros.busca])
 
-  return { conversas, loading, error }
+  const refresh = useCallback(() => setRefreshKey(k => k + 1), [])
+
+  return { conversas, loading, loadingMore, hasMore, total, loadMore, refresh }
 }

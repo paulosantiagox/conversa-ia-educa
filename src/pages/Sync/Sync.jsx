@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { RefreshCw, CheckCircle, XCircle, Clock, Database, MessageSquare, StopCircle, AlertTriangle, Brain, Zap, Info, Volume2, Mic } from 'lucide-react'
+import { RefreshCw, CheckCircle, XCircle, Clock, Database, MessageSquare, StopCircle, AlertTriangle, Brain, Zap, Info, Volume2, Mic, Timer } from 'lucide-react'
 import { Topbar } from '../../components/layout/Topbar'
 import { useToast } from '../../contexts/ToastContext'
 import { useSync } from '../../contexts/SyncContext'
@@ -107,7 +107,10 @@ export function Sync() {
     analiseAtiva, analiseProgresso, analiseLogs, analiseResultados, analiseDist,
     iniciarAnalise, pararAnalise,
     whisperAtivo, whisperLogs, whisperProgresso, whisperResultado, whisperPendentes,
+    whisperSemCredito, setWhisperSemCredito,
     modoWhisper, setModoWhisper, iniciarWhisper, pararWhisper,
+    autoSyncAtivo, ultimoAutoSync, proximoAutoSync,
+    ativarAutoSync, desativarAutoSync,
   } = useSync()
 
   // --- Estado local (não precisa persistir) ---
@@ -237,6 +240,49 @@ export function Sync() {
     <div className="flex flex-col h-full overflow-hidden">
       <Topbar title="Sync DataCrazy" />
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-900">
+
+        {/* Auto-sync */}
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] px-3 py-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Timer size={13} className="text-slate-400" />
+              <div>
+                <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">Sincronização Automática</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Sincroniza conversas, mensagens e áudios pendentes a cada 10 min</p>
+              </div>
+            </div>
+            {/* Toggle */}
+            <button
+              onClick={autoSyncAtivo ? desativarAutoSync : ativarAutoSync}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${autoSyncAtivo ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+            >
+              <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${autoSyncAtivo ? 'translate-x-4' : 'translate-x-0'}`} />
+            </button>
+          </div>
+          {autoSyncAtivo ? (
+            <div className="flex items-center gap-4 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+              <span className="flex items-center gap-1.5 text-[11px] text-green-600 dark:text-green-400 font-medium">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                </span>
+                Auto-sync ativo
+              </span>
+              {ultimoAutoSync && (
+                <span className="text-[11px] text-slate-400">
+                  Último: {ultimoAutoSync.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              )}
+              {proximoAutoSync && (
+                <span className="text-[11px] text-slate-400">
+                  Próximo: {proximoAutoSync.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="text-[11px] text-slate-400 mt-1.5">Desativado — sync manual apenas</p>
+          )}
+        </div>
 
         {/* Status da conexão */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] px-3 py-2.5 flex items-center justify-between">
@@ -773,6 +819,26 @@ export function Sync() {
           <p className="text-[11px] text-slate-400 dark:text-slate-500">
             Usa o modelo Whisper da OpenAI para transcrever áudios das consultoras. Apenas áudios manuais (<code className="bg-slate-100 dark:bg-slate-700 px-1 rounded">is_auto=false</code>) sem transcrição são processados.
           </p>
+
+          {whisperSemCredito && (
+            <div className="flex items-start justify-between gap-2 bg-red-950/40 border border-red-700 rounded px-3 py-2">
+              <div className="flex items-center gap-2 text-[11px] text-red-400">
+                <AlertTriangle size={13} className="shrink-0 text-red-500" />
+                <span>
+                  <strong className="text-red-300">Cota OpenAI esgotada</strong> — Transcrição pausada. Recarregue créditos em{' '}
+                  <a href="https://platform.openai.com/account/billing" target="_blank" rel="noreferrer" className="underline text-red-300 hover:text-red-200">
+                    platform.openai.com
+                  </a>.
+                </span>
+              </div>
+              <button
+                onClick={() => setWhisperSemCredito(false)}
+                className="text-red-600 hover:text-red-400 text-[11px] shrink-0 mt-0.5"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <ModeCard modo="teste" selected={modoWhisper === 'teste'} onSelect={setModoWhisper}

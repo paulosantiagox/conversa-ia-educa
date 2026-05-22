@@ -89,6 +89,10 @@ export async function rodarWhisper(modo = 'teste', onLog = () => {}, onCancel = 
         concluidas = res.concluidas
         erros = res.erros
       } catch (err) {
+        if (/429|quota|insufficient_quota/i.test(err.message)) {
+          onLog(`✗ Cota OpenAI esgotada — transcrição pausada. Recarregue créditos em platform.openai.com`)
+          return { concluidas, erros, semCredito: true }
+        }
         const isFetchError = /fetch|network|Failed|NetworkError/i.test(err.message) || err.status === 403 || err.status === 404
         if (isFetchError) {
           await supabase.from('ci_mensagens').update({ transcricao: '[inacessível]' }).eq('id', audios[i].id)
@@ -103,7 +107,7 @@ export async function rodarWhisper(modo = 'teste', onLog = () => {}, onCancel = 
     }
 
     onLog(`✓ Concluído: ${concluidas} transcritos | ${erros} erros`)
-    return { concluidas, erros }
+    return { concluidas, erros, semCredito: false }
   }
 
   // COMPLETO: paginação — busca lotes de 1000 até zerar os pendentes
@@ -137,6 +141,11 @@ export async function rodarWhisper(modo = 'teste', onLog = () => {}, onCancel = 
         concluidas = res.concluidas
         erros = res.erros
       } catch (err) {
+        if (/429|quota|insufficient_quota/i.test(err.message)) {
+          onLog(`✗ Cota OpenAI esgotada — transcrição pausada. Recarregue créditos em platform.openai.com`)
+          onLog(`✓ Concluído: ${concluidas} transcritos | ${erros} erros`)
+          return { concluidas, erros, semCredito: true }
+        }
         const isFetchError = /fetch|network|Failed|NetworkError/i.test(err.message) || err.status === 403 || err.status === 404
         if (isFetchError) {
           await supabase.from('ci_mensagens').update({ transcricao: '[inacessível]' }).eq('id', lote[i].id)

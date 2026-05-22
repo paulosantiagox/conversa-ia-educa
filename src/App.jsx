@@ -17,6 +17,7 @@ import { Configuracoes } from './pages/Configuracoes/Configuracoes'
 import { Sync } from './pages/Sync/Sync'
 import { AnaliseIA } from './pages/AnaliseIA/AnaliseIA'
 import { Custos } from './pages/Custos/Custos'
+import { Matriculados } from './pages/Matriculados/Matriculados'
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/sync" element={<Sync />} />
             <Route path="/analise-ia" element={<AnaliseIA />} />
             <Route path="/custos" element={<Custos />} />
+            <Route path="/matriculados" element={<Matriculados />} />
           </Routes>
         </MainLayout>
       </FiltroProvider>

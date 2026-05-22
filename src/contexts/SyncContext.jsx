@@ -3,6 +3,7 @@ import { syncConversas } from '../lib/syncDataCrazy'
 import { syncMensagensModo } from '../lib/syncMensagens'
 import { rodarAnaliseModo } from '../lib/rodarAnalise'
 import { rodarWhisper, contarAudiosPendentes } from '../lib/rodarWhisper'
+import { iniciarAutoSync } from '../lib/autoSync'
 import {
   somConversaImportada,
   somMensagensSincronizadas,
@@ -25,7 +26,7 @@ const SONS = {
 
 function pushLog(setter, msg, tipo) {
   setter(prev => {
-    const entry = { ts: new Date().toLocaleTimeString('pt-BR'), msg }
+    const entry = { ts: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }), msg }
     const next = [...prev, entry]
     return next.length > 500 ? next.slice(-500) : next
   })
@@ -60,13 +61,60 @@ export function SyncProvider({ children }) {
   const [whisperLogs, setWhisperLogs] = useState([])
   const [whisperProgresso, setWhisperProgresso] = useState(null)
   const [whisperResultado, setWhisperResultado] = useState(null)
+  const [whisperSemCredito, setWhisperSemCredito] = useState(false)
   const [whisperPendentes, setWhisperPendentes] = useState(0)
   const [modoWhisper, setModoWhisper] = useState('teste')
   const cancelWhisperRef = useRef(false)
 
+  // ─── Auto-sync ───
+  const [autoSyncAtivo, setAutoSyncAtivo] = useState(() => localStorage.getItem('conversia_autosync') === 'true')
+  const [ultimoAutoSync, setUltimoAutoSync] = useState(null)
+  const [proximoAutoSync, setProximoAutoSync] = useState(null)
+  const [autoSyncLogs, setAutoSyncLogs] = useState([])
+  const pararAutoSyncRef = useRef(null)
+  const qualquerAtivoRef = useRef(false)
+
   useEffect(() => { contarAudiosPendentes().then(setWhisperPendentes) }, [])
 
   const qualquerAtivo = syncConversasAtivo || syncMensagensAtivo || analiseAtiva || whisperAtivo
+
+  // Manter ref sincronizada para uso no autoSync (closure)
+  useEffect(() => { qualquerAtivoRef.current = qualquerAtivo }, [qualquerAtivo])
+
+  // Iniciar autoSync automaticamente se estava ativo
+  useEffect(() => {
+    if (autoSyncAtivo) {
+      pararAutoSyncRef.current = iniciarAutoSync({
+        onLog: (msg) => pushLog(setAutoSyncLogs, msg, null),
+        onUltimoSync: setUltimoAutoSync,
+        onProximoSync: setProximoAutoSync,
+        isQualquerAtivo: () => qualquerAtivoRef.current,
+      })
+    }
+    return () => { pararAutoSyncRef.current?.() }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function ativarAutoSync() {
+    localStorage.setItem('conversia_autosync', 'true')
+    setAutoSyncAtivo(true)
+    setAutoSyncLogs([])
+    setProximoAutoSync(new Date(Date.now() + 10 * 60 * 1000))
+    pararAutoSyncRef.current = iniciarAutoSync({
+      onLog: (msg) => pushLog(setAutoSyncLogs, msg, null),
+      onUltimoSync: setUltimoAutoSync,
+      onProximoSync: setProximoAutoSync,
+      isQualquerAtivo: () => qualquerAtivoRef.current,
+    })
+  }
+
+  function desativarAutoSync() {
+    localStorage.setItem('conversia_autosync', 'false')
+    setAutoSyncAtivo(false)
+    setProximoAutoSync(null)
+    pararAutoSyncRef.current?.()
+    pararAutoSyncRef.current = null
+  }
 
   async function iniciarSyncConversas() {
     if (syncConversasAtivo) return null
@@ -159,6 +207,7 @@ export function SyncProvider({ children }) {
     setWhisperLogs([])
     setWhisperProgresso(null)
     setWhisperResultado(null)
+    setWhisperSemCredito(false)
     try {
       const resultado = await rodarWhisper(
         modo,
@@ -168,6 +217,7 @@ export function SyncProvider({ children }) {
           setWhisperProgresso({ atual, total, pct, concluidas, erros })
       )
       setWhisperResultado(resultado)
+      if (resultado?.semCredito) setWhisperSemCredito(true)
       const pendentes = await contarAudiosPendentes()
       setWhisperPendentes(pendentes)
       return resultado
@@ -194,7 +244,10 @@ export function SyncProvider({ children }) {
       analiseAtiva, analiseProgresso, analiseLogs, analiseResultados, analiseDist,
       iniciarAnalise, pararAnalise,
       whisperAtivo, whisperLogs, whisperProgresso, whisperResultado, whisperPendentes,
+      whisperSemCredito, setWhisperSemCredito,
       modoWhisper, setModoWhisper, iniciarWhisper, pararWhisper,
+      autoSyncAtivo, ultimoAutoSync, proximoAutoSync, autoSyncLogs,
+      ativarAutoSync, desativarAutoSync,
       qualquerAtivo, pararTudo,
     }}>
       {children}
