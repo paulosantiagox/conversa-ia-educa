@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, MessageSquare, Flame, Bell, TrendingUp, Trophy,
-  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap, Settings, RefreshCw, DollarSign, UserCheck
+  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap, Settings, RefreshCw, DollarSign, UserCheck, Target
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -63,6 +63,7 @@ export function Sidebar() {
         { to: '/ranking', label: 'Ranking',      icon: Trophy },
         { to: '/followup',     label: 'Follow-up IA',  icon: Sparkles,   badge: badges.followups,    badgeColor: 'bg-purple-500' },
         { to: '/matriculados', label: 'Matriculados',  icon: UserCheck,  badge: badges.matriculados, badgeColor: 'bg-green-500' },
+        { to: '/acao-fim-mes', label: 'Ação Final Mês', icon: Target },
       ],
     },
     {

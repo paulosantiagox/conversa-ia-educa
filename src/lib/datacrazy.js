@@ -36,6 +36,8 @@ export function mapConversation(conv) {
     ultima_mensagem_texto: conv.lastMessage?.body ?? '',
     status: conv.finished ? 'fechada' : 'aberta',
     updated_at_dc: conv.updatedAt ?? conv.lastMessageDate ?? null,
+    instancia: conv.instance?.name ?? null,
+    instancia_numero: conv.instance?.phoneNumber ?? conv.instance?.phone ?? conv.instance?.number ?? null,
   }
 }
 
