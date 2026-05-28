@@ -22,33 +22,32 @@ async function upsertConversa(mapped) {
   const { contato_numero, datacrazy_id, updated_at_dc, ...resto } = mapped
   if (!datacrazy_id || !contato_numero) return { acao: 'ignorada' }
 
+  // Verificar se já existe e se mudou
   const { data: existente } = await supabase
     .from('ci_conversas')
     .select('id, updated_at')
     .eq('datacrazy_id', datacrazy_id)
     .maybeSingle()
 
-  if (!existente) {
-    const { error } = await supabase
-      .from('ci_conversas')
-      .insert({ datacrazy_id, contato_numero, ...resto, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-    if (error) throw error
-    return { acao: 'inserida' }
-  }
-
   const dcUpdated = updated_at_dc ? new Date(updated_at_dc) : null
-  const dbUpdated = existente.updated_at ? new Date(existente.updated_at) : null
-  if (dcUpdated && dbUpdated && dcUpdated <= dbUpdated) return { acao: 'sem_mudanca' }
+  const dbUpdated = existente?.updated_at ? new Date(existente.updated_at) : null
+  if (existente && dcUpdated && dbUpdated && dcUpdated <= dbUpdated) return { acao: 'sem_mudanca' }
 
+  // Upsert atômico — evita duplicate key em inserts concorrentes
   const { error } = await supabase
     .from('ci_conversas')
-    .update({ contato_numero, ...resto, updated_at: new Date().toISOString() })
-    .eq('datacrazy_id', datacrazy_id)
+    .upsert(
+      { datacrazy_id, contato_numero, ...resto, updated_at: new Date().toISOString() },
+      { onConflict: 'datacrazy_id' }
+    )
   if (error) throw error
-  return { acao: 'atualizada', id: existente.id }
+  return { acao: existente ? 'atualizada' : 'inserida' }
 }
 
-export async function syncConversas(onLog = () => {}, onCancel = null, onProgress = null) {
+export async function syncConversas(onLog = () => {}, onCancel = null, onProgress = null, options = {}) {
+  const { limitePaginas = null, paradaAntecipada = false } = options
+  // limitePaginas: null = sem limite | number = para após N páginas
+  // paradaAntecipada: para após 2 páginas consecutivas 100% sem mudança
   let logId = null
   const totais = { conversas_importadas: 0, atualizadas: 0, ignoradas: 0, erros: 0, status: 'concluido' }
   const erroIds = []
@@ -62,13 +61,18 @@ export async function syncConversas(onLog = () => {}, onCancel = null, onProgres
 
   try {
     logId = await registrarInicio()
-    onLog('ℹ Sync iniciado. Conectando à API DataCrazy...')
+    if (limitePaginas) {
+      onLog(`ℹ Sync iniciado (modo rápido — ${limitePaginas} páginas / ~${limitePaginas * 50} conversas recentes)`)
+    } else {
+      onLog('ℹ Sync iniciado. Conectando à API DataCrazy...')
+    }
 
     const TAKE = 50
     let skip = 0
     let pagina = 1
     let processadas = 0
     const temposPagina = []
+    let paginasSemMudanca = 0  // contador para parada antecipada
 
     while (true) {
       onLog(`ℹ Buscando página ${pagina} (skip=${skip})...`)
@@ -117,6 +121,7 @@ export async function syncConversas(onLog = () => {}, onCancel = null, onProgres
         }
       }
 
+      let mudancasNaPagina = 0
       for (const conv of eja) {
         if (onCancel && onCancel()) {
           onLog('⛔ Sync interrompido pelo usuário.')
@@ -126,8 +131,8 @@ export async function syncConversas(onLog = () => {}, onCancel = null, onProgres
         try {
           const mapped = mapConversation(conv)
           const { acao } = await upsertConversa(mapped)
-          if (acao === 'inserida') totais.conversas_importadas++
-          if (acao === 'atualizada') totais.atualizadas++
+          if (acao === 'inserida') { totais.conversas_importadas++; mudancasNaPagina++ }
+          if (acao === 'atualizada') { totais.atualizadas++; mudancasNaPagina++ }
           if (acao === 'sem_mudanca') totais.ignoradas++
           processadas++
 
@@ -146,6 +151,24 @@ export async function syncConversas(onLog = () => {}, onCancel = null, onProgres
       if (items.length < TAKE) {
         onLog('ℹ Última página atingida — paginação concluída.')
         break
+      }
+
+      if (limitePaginas && pagina >= limitePaginas) {
+        onLog(`ℹ Limite de ${limitePaginas} páginas atingido — sync rápido concluído.`)
+        break
+      }
+
+      // Parada antecipada: 2 páginas consecutivas sem nenhuma mudança = chegamos nas antigas
+      if (paradaAntecipada) {
+        if (mudancasNaPagina === 0) {
+          paginasSemMudanca++
+          if (paginasSemMudanca >= 2) {
+            onLog(`ℹ 2 páginas consecutivas sem mudanças — conversas antigas, encerrando sync.`)
+            break
+          }
+        } else {
+          paginasSemMudanca = 0  // reset se teve mudança
+        }
       }
 
       skip += TAKE
@@ -348,6 +371,7 @@ export async function organizarDadosConversa(conversaId, mensagens) {
   if (linkPagamento)   updates.link_pagamento   = linkPagamento
   if (linkUtmCode)     updates.link_utm_code    = linkUtmCode
   if (linkEnviadoAt)   updates.link_enviado_at  = linkEnviadoAt
+  updates.mensagens_sync_at = new Date().toISOString()  // marca quando foi sincronizado
 
   await supabase.from('ci_conversas').update(updates).eq('id', conversaId)
 }
