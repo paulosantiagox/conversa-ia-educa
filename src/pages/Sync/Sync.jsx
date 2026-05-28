@@ -135,6 +135,10 @@ export function Sync() {
   const resyncCancelRef = useRef(false)
   const logsResyncContainerRef = useRef(null)
 
+  // Cronômetro do sync de mensagens
+  const msgSyncIniciadoAtRef = useRef(null)
+  const [msgSyncDecorrido, setMsgSyncDecorrido] = useState(0) // segundos
+
   const logsWhisperContainerRef = useRef(null)
   const logsContainerRef = useRef(null)
   const logsMsgContainerRef = useRef(null)
@@ -145,6 +149,18 @@ export function Sync() {
   useEffect(() => { carregarStatsIA() }, [])
   useEffect(() => { if (logsContainerRef.current) logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight }, [syncConversasLogs])
   useEffect(() => { if (logsMsgContainerRef.current) logsMsgContainerRef.current.scrollTop = logsMsgContainerRef.current.scrollHeight }, [syncMensagensLogs])
+
+  // Cronômetro: inicia quando ativo, para quando termina
+  useEffect(() => {
+    if (syncMensagensAtivo) {
+      msgSyncIniciadoAtRef.current = Date.now()
+      setMsgSyncDecorrido(0)
+      const t = setInterval(() => {
+        setMsgSyncDecorrido(Math.floor((Date.now() - msgSyncIniciadoAtRef.current) / 1000))
+      }, 1000)
+      return () => clearInterval(t)
+    }
+  }, [syncMensagensAtivo])
   useEffect(() => { if (logsIAContainerRef.current) logsIAContainerRef.current.scrollTop = logsIAContainerRef.current.scrollHeight }, [analiseLogs])
   useEffect(() => { if (logsResyncContainerRef.current) logsResyncContainerRef.current.scrollTop = logsResyncContainerRef.current.scrollHeight }, [resyncLogs])
   useEffect(() => { if (logsVerificacaoRef.current) logsVerificacaoRef.current.scrollTop = logsVerificacaoRef.current.scrollHeight }, [verificacaoLogs])
@@ -555,26 +571,47 @@ export function Sync() {
             )}
 
             {/* Progresso */}
-            {(syncMensagensAtivo || syncMensagensResumo) && (
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {syncMensagensProgresso.total > 0
-                      ? `${syncMensagensProgresso.atual} de ${syncMensagensProgresso.total} conversas`
-                      : syncMensagensAtivo ? 'Iniciando...' : ''}
-                  </span>
-                  <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300">
-                    {syncMensagensProgresso.pct != null ? `${syncMensagensProgresso.pct}%` : ''}
-                  </span>
+            {(syncMensagensAtivo || syncMensagensResumo) && (() => {
+              const { atual, total, pct } = syncMensagensProgresso
+              const fmtTempo = (s) => {
+                if (s < 60) return `${s}s`
+                const m = Math.floor(s / 60), r = s % 60
+                return r > 0 ? `${m}min ${r}s` : `${m}min`
+              }
+              const eta = syncMensagensAtivo && atual > 0 && total > 0 && msgSyncDecorrido > 0
+                ? Math.round((msgSyncDecorrido / atual) * (total - atual))
+                : null
+              return (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {total > 0 ? `${atual} de ${total} conversas` : syncMensagensAtivo ? 'Iniciando...' : ''}
+                    </span>
+                    <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                      {pct != null ? `${pct}%` : ''}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 bg-green-500 ${pct == null ? 'animate-pulse w-full' : ''}`}
+                      style={pct != null ? { width: `${pct}%` } : {}}
+                    />
+                  </div>
+                  {syncMensagensAtivo && (
+                    <div className="flex items-center gap-3 text-[10px]">
+                      <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                        <Timer size={9} /> Decorrido: <span className="font-medium text-slate-600 dark:text-slate-300">{fmtTempo(msgSyncDecorrido)}</span>
+                      </span>
+                      {eta != null && (
+                        <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                          <Clock size={9} /> Previsão: <span className="font-medium text-green-600 dark:text-green-400">{fmtTempo(eta)} restantes</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 bg-green-500 ${syncMensagensProgresso.pct == null ? 'animate-pulse w-full' : ''}`}
-                    style={syncMensagensProgresso.pct != null ? { width: `${syncMensagensProgresso.pct}%` } : {}}
-                  />
-                </div>
-              </div>
-            )}
+              )
+            })()}
 
             {/* Terminal */}
             <div
