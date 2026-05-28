@@ -300,15 +300,54 @@ export async function organizarDadosConversa(conversaId, mensagens) {
     else janela24hStatus = 'expirada'
   }
 
+  // Detecção de mensagem de valor e link de pagamento
+  const VALOR_PATTERNS = ['12x de R$', 'à vista no PIX', 'Qual dessas duas opções você prefere']
+  const LINK_REGEXP = /https?:\/\/[^\s]*\/pay\/[^\s]+/i
+  const UTM_REGEXP = /utm_source=cod-([a-zA-Z0-9]+)/i
+
+  let recebeuValor = false
+  let recebeuValorAt = null
+  let recebeuLink = false
+  let linkPagamento = null
+  let linkUtmCode = null
+  let linkEnviadoAt = null
+
+  for (const m of reais) {
+    const isConsultora = m.received === false || m.de === 'consultora'
+    if (!isConsultora) continue
+    const body = m.body ?? m.conteudo ?? ''
+    const ts = m.createdAt ?? m.enviado_at ?? null
+    if (!recebeuValor && VALOR_PATTERNS.some(p => body.includes(p))) {
+      recebeuValor = true
+      recebeuValorAt = ts
+    }
+    if (!linkPagamento) {
+      const match = body.match(LINK_REGEXP)
+      if (match) {
+        linkPagamento = match[0].trim()
+        recebeuLink = true
+        linkEnviadoAt = ts
+        const utmMatch = linkPagamento.match(UTM_REGEXP)
+        linkUtmCode = utmMatch?.[1]?.toLowerCase() ?? null
+      }
+    }
+  }
+
   const updates = {
     total_mensagens: totalMensagens,
     primeira_msg_automatica: primeiraMsgAutomatica,
     janela_24h_status: janela24hStatus,
     ultima_mensagem_lead_at: ultimaMensagemLeadAt,
+    recebeu_valor: recebeuValor,
+    recebeu_link: recebeuLink,
     updated_at: new Date().toISOString(),
   }
-  if (tempoRespostaMedio !== null) updates.tempo_resposta_medio = tempoRespostaMedio
+  if (tempoRespostaMedio !== null)   updates.tempo_resposta_medio = tempoRespostaMedio
   if (tempoPrimeiraResposta !== null) updates.tempo_primeira_resposta = tempoPrimeiraResposta
+  if (recebeuValorAt)  updates.recebeu_valor_at = recebeuValorAt
+  if (linkPagamento)   updates.link_pagamento   = linkPagamento
+  if (linkUtmCode)     updates.link_utm_code    = linkUtmCode
+  if (linkEnviadoAt)   updates.link_enviado_at  = linkEnviadoAt
 
   await supabase.from('ci_conversas').update(updates).eq('id', conversaId)
 }

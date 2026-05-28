@@ -37,10 +37,10 @@ export function iniciarAutoSync({ onLog, onUltimoSync, onProximoSync, isQualquer
       await new Promise(r => setTimeout(r, 3000))
       if (parado) return
 
-      // 2. Mensagens recentes
-      onLog?.(`ℹ [Auto-sync] Sincronizando mensagens recentes...`)
+      // 2. Mensagens das últimas 24h (incremental — conversas novas e com msgs novas)
+      onLog?.(`ℹ [Auto-sync] Sincronizando mensagens das últimas 24h...`)
       await syncMensagensModo(
-        'recentes',
+        'ultimas_24h',
         (msg) => onLog?.(`  ${msg}`),
         () => parado,
         () => {}

@@ -6,9 +6,16 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms))
 const TRINTA_DIAS_MS = 30 * 24 * 60 * 60 * 1000
 
 export function estimarTempo(modo) {
-  const map = { teste: '~1 minuto', recentes: '~20–30 minutos', completo: '~4 horas' }
+  const map = {
+    teste:       '~1 minuto',
+    ultimas_24h: '~5–15 minutos',
+    recentes:    '~30–90 minutos',
+    completo:    '~4 horas',
+  }
   return map[modo] ?? '?'
 }
+
+const VINTE_QUATRO_H_MS = 24 * 60 * 60 * 1000
 
 async function buscarConversasModo(modo) {
   let query = supabase
@@ -17,15 +24,22 @@ async function buscarConversasModo(modo) {
     .not('datacrazy_id', 'is', null)
 
   if (modo === 'teste') {
+    // 50 mais recentes, independente de ter mensagens
     query = query.order('ultima_mensagem_at', { ascending: false }).limit(50)
+  } else if (modo === 'ultimas_24h') {
+    // Conversas ativas nas últimas 24h — usado pelo auto-sync (rápido)
+    const limite = new Date(Date.now() - VINTE_QUATRO_H_MS).toISOString()
+    query = query
+      .gte('ultima_mensagem_at', limite)
+      .order('ultima_mensagem_at', { ascending: false })
   } else if (modo === 'recentes') {
+    // Todos os últimos 30 dias — inclui conversas que já tinham mensagens
     const limite = new Date(Date.now() - TRINTA_DIAS_MS).toISOString()
     query = query
       .gte('ultima_mensagem_at', limite)
-      .eq('total_mensagens', 0)
       .order('ultima_mensagem_at', { ascending: false })
   } else {
-    // completo
+    // completo — backfill de conversas que nunca tiveram mensagens importadas
     query = query
       .eq('total_mensagens', 0)
       .order('ultima_mensagem_at', { ascending: false })
