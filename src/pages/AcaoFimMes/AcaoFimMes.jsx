@@ -73,31 +73,33 @@ function parseLink(url) {
   return { url, slug: slugM?.[1] ?? null, utmCode, consultoraNome: utmCode ? (UTM_CODES[utmCode] ?? utmCode) : null }
 }
 
-function fmtMsg(de, texto, at) {
-  if (!texto) return ''
-  const quem = de === 'lead' ? '👤' : '💬'
-  const hora = at ? new Date(at).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : ''
-  return `${quem} [${hora}] ${texto}`
+function fmtMsgCSV(m) {
+  if (!m?.conteudo) return ''
+  const quem = m.de === 'lead' ? '👤' : '💬'
+  const hora = m.enviado_at ? new Date(m.enviado_at).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : ''
+  return `${quem} [${hora}] ${m.conteudo}`
 }
 
 function exportCSV(dados, aba, codigo) {
   const headers = ['Nome','Número','Consultora','Classificação','Score',
     'Recebeu Valor Em','Recebeu Link Em','Link','Slug','UTM','Consultora Link',
     'Última Mensagem','Última Msg Lead','Instância','Instância Número',
-    'Msg 1','Msg 2','Msg 3']
-  const rows = dados.map(r => [
-    r.contato_nome ?? '', r.contato_numero ?? '', r.consultora ?? '',
-    r.classificacao_ia ?? '', r.score_ia ?? '',
-    r.valor_enviado_at ? new Date(r.valor_enviado_at).toLocaleString('pt-BR') : '',
-    r.link_enviado_at  ? new Date(r.link_enviado_at).toLocaleString('pt-BR')  : '',
-    r.link_url ?? '', r.link_slug ?? '', r.link_utm_code ?? '', r.link_consultora_nome ?? '',
-    r.ultima_mensagem_at      ? new Date(r.ultima_mensagem_at).toLocaleString('pt-BR')      : '',
-    r.ultima_mensagem_lead_at ? new Date(r.ultima_mensagem_lead_at).toLocaleString('pt-BR') : '',
-    r.instancia ?? '', r.instancia_numero ?? '',
-    fmtMsg(r.msg1_de, r.msg1_texto, r.msg1_at),
-    fmtMsg(r.msg2_de, r.msg2_texto, r.msg2_at),
-    fmtMsg(r.msg3_de, r.msg3_texto, r.msg3_at),
-  ])
+    'Msg 1 (mais antiga)','Msg 2','Msg 3','Msg 4','Msg 5 (mais recente)']
+  const rows = dados.map(r => {
+    const msgs = Array.isArray(r.ultimas_msgs) ? r.ultimas_msgs : []
+    return [
+      r.contato_nome ?? '', r.contato_numero ?? '', r.consultora ?? '',
+      r.classificacao_ia ?? '', r.score_ia ?? '',
+      r.valor_enviado_at ? new Date(r.valor_enviado_at).toLocaleString('pt-BR') : '',
+      r.link_enviado_at  ? new Date(r.link_enviado_at).toLocaleString('pt-BR')  : '',
+      r.link_url ?? '', r.link_slug ?? '', r.link_utm_code ?? '', r.link_consultora_nome ?? '',
+      r.ultima_mensagem_at      ? new Date(r.ultima_mensagem_at).toLocaleString('pt-BR')      : '',
+      r.ultima_mensagem_lead_at ? new Date(r.ultima_mensagem_lead_at).toLocaleString('pt-BR') : '',
+      r.instancia ?? '', r.instancia_numero ?? '',
+      fmtMsgCSV(msgs[0]), fmtMsgCSV(msgs[1]), fmtMsgCSV(msgs[2]),
+      fmtMsgCSV(msgs[3]), fmtMsgCSV(msgs[4]),
+    ]
+  })
   const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
   const a = document.createElement('a')
@@ -341,24 +343,25 @@ export function AcaoFimMes() {
                             <p className="text-[9px] text-slate-400 mt-0.5">Lead: {fmt(r.ultima_mensagem_lead_at)}</p>
                           )}
                         </td>
-                        {/* Últimas 3 mensagens */}
+                        {/* Últimas 5 mensagens — mais antiga (1) → mais recente (5) */}
                         <td className="px-3 py-2.5 max-w-[220px]">
                           <div className="space-y-1">
-                            {[
-                              { de: r.msg1_de, texto: r.msg1_texto, at: r.msg1_at },
-                              { de: r.msg2_de, texto: r.msg2_texto, at: r.msg2_at },
-                              { de: r.msg3_de, texto: r.msg3_texto, at: r.msg3_at },
-                            ].filter(m => m.texto).map((m, i) => (
-                              <div key={i} className={`text-[9px] rounded px-1.5 py-1 ${
-                                m.de === 'lead'
-                                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                                  : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-                              }`}>
-                                <span className="font-semibold opacity-60 mr-1">{m.de === 'lead' ? '👤' : '💬'} {fmt(m.at)}</span>
-                                <span className="line-clamp-2 break-words">{m.texto}</span>
-                              </div>
-                            ))}
-                            {!r.msg1_texto && <span className="text-[9px] text-slate-300">—</span>}
+                            {Array.isArray(r.ultimas_msgs) && r.ultimas_msgs.length > 0
+                              ? r.ultimas_msgs.map((m, i) => (
+                                <div key={i} className={`text-[9px] rounded px-1.5 py-1 ${
+                                  m.de === 'lead'
+                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                                    : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                                }`}>
+                                  <span className="font-semibold opacity-60 mr-1 block">
+                                    {m.de === 'lead' ? '👤' : '💬'} {fmt(m.enviado_at)}
+                                    {i === r.ultimas_msgs.length - 1 && <span className="ml-1 text-[8px] text-orange-400">← recente</span>}
+                                  </span>
+                                  <span className="line-clamp-2 break-words">{m.conteudo}</span>
+                                </div>
+                              ))
+                              : <span className="text-[9px] text-slate-300">—</span>
+                            }
                           </div>
                         </td>
                         <td className="px-3 py-2.5">
