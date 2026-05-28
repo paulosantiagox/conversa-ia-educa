@@ -8,6 +8,7 @@ import { fetchConversations } from '../../lib/datacrazy'
 import { estimarTempo } from '../../lib/syncMensagens'
 import { contarPendentes, contarAnalisadas } from '../../lib/rodarAnalise'
 import { resyncAudios } from '../../lib/resyncAudios'
+import { verificarCobertura } from '../../lib/verificarSync'
 
 function StatusBadgeConn({ ok, testando }) {
   if (testando) return (
@@ -119,6 +120,11 @@ export function Sync() {
   const [apiTotal, setApiTotal] = useState(null)
   const [historico, setHistorico] = useState([])
   const [stats, setStats] = useState({ conversas: 0, mensagens: 0, ultimoSync: null })
+  const [modoConversas, setModoConversas] = useState('rapido')
+  const [verificandoSync, setVerificandoSync] = useState(false)
+  const [verificacaoLogs, setVerificacaoLogs] = useState([])
+  const [verificacaoResultado, setVerificacaoResultado] = useState(null)
+  const logsVerificacaoRef = useRef(null)
   const [modoMsg, setModoMsg] = useState('teste')
   const [modoIA, setModoIA] = useState('teste')
   const [statsIA, setStatsIA] = useState({ pendentes: 0, analisadas: 0 })
@@ -141,6 +147,7 @@ export function Sync() {
   useEffect(() => { if (logsMsgContainerRef.current) logsMsgContainerRef.current.scrollTop = logsMsgContainerRef.current.scrollHeight }, [syncMensagensLogs])
   useEffect(() => { if (logsIAContainerRef.current) logsIAContainerRef.current.scrollTop = logsIAContainerRef.current.scrollHeight }, [analiseLogs])
   useEffect(() => { if (logsResyncContainerRef.current) logsResyncContainerRef.current.scrollTop = logsResyncContainerRef.current.scrollHeight }, [resyncLogs])
+  useEffect(() => { if (logsVerificacaoRef.current) logsVerificacaoRef.current.scrollTop = logsVerificacaoRef.current.scrollHeight }, [verificacaoLogs])
   useEffect(() => { if (logsWhisperContainerRef.current) logsWhisperContainerRef.current.scrollTop = logsWhisperContainerRef.current.scrollHeight }, [whisperLogs])
 
   async function testarConexao() {
@@ -184,8 +191,25 @@ export function Sync() {
     setStatsIA({ pendentes: p, analisadas: a })
   }
 
+  async function handleVerificarSync() {
+    if (verificandoSync) return
+    setVerificandoSync(true)
+    setVerificacaoLogs([])
+    setVerificacaoResultado(null)
+    const addLog = (msg) => {
+      const ts = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      setVerificacaoLogs(prev => [...prev, { ts, msg }])
+    }
+    const resultado = await verificarCobertura(addLog)
+    setVerificacaoResultado(resultado)
+    setVerificandoSync(false)
+  }
+
   async function handleIniciarSync() {
-    const resultado = await iniciarSyncConversas()
+    const opcoes = modoConversas === 'rapido'
+      ? { paradaAntecipada: true }
+      : {}
+    const resultado = await iniciarSyncConversas(opcoes)
     if (!resultado) return
     if (resultado.status === 'cancelado') toast.info('Sync cancelado')
     await carregarHistorico()
@@ -310,6 +334,17 @@ export function Sync() {
               <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">Sincronizar Conversas EJA</p>
             </div>
             <div className="flex items-center gap-2">
+              {!syncConversasAtivo && (
+                <button
+                  onClick={handleVerificarSync}
+                  disabled={verificandoSync}
+                  title="Verificar cobertura por amostragem (~15s)"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-blue-400 hover:text-blue-500 rounded text-[11px] transition-colors disabled:opacity-50"
+                >
+                  <Info size={11} className={verificandoSync ? 'animate-pulse' : ''} />
+                  {verificandoSync ? 'Verificando...' : 'Verificar cobertura'}
+                </button>
+              )}
               {syncConversasAtivo && (
                 <button
                   onClick={pararSyncConversas}
@@ -330,6 +365,29 @@ export function Sync() {
           </div>
 
           <div className="p-3 space-y-2">
+            {/* Seletor de modo */}
+            {!syncConversasAtivo && (
+              <div className="flex gap-2">
+                <ModeCard
+                  modo="rapido"
+                  selected={modoConversas === 'rapido'}
+                  onSelect={setModoConversas}
+                  titulo="RÁPIDO"
+                  descricao="Para ao encontrar 2 páginas sem mudanças. Ideal para uso diário."
+                  tempo="~1–3 minutos"
+                />
+                <ModeCard
+                  modo="completo"
+                  selected={modoConversas === 'completo'}
+                  onSelect={setModoConversas}
+                  titulo="COMPLETO"
+                  descricao="Varre todas as páginas da API sem parada antecipada."
+                  tempo="~10 minutos"
+                  aviso
+                />
+              </div>
+            )}
+
             {(syncConversasAtivo || syncConversasResumo) && (
               <div>
                 <div className="flex items-center justify-between mb-1">
@@ -370,6 +428,37 @@ export function Sync() {
             <p className="text-[10px] text-slate-400">
               Apenas conversas com instância começando em <strong>"EEB"</strong> são importadas. Autoflix e outros são ignorados automaticamente.
             </p>
+
+            {/* Verificação de cobertura */}
+            {(verificandoSync || verificacaoLogs.length > 0) && (
+              <div>
+                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Verificação de cobertura</p>
+                <div
+                  ref={logsVerificacaoRef}
+                  className="h-32 overflow-y-auto bg-slate-950 rounded p-2.5 font-mono text-[11px] space-y-0.5"
+                  style={{ scrollbarWidth: 'thin' }}
+                >
+                  {verificacaoLogs.map((l, i) => (
+                    <div key={i} className="flex gap-2">
+                      <span className="text-slate-600 shrink-0">{l.ts}</span>
+                      <LogLine msg={l.msg} />
+                    </div>
+                  ))}
+                </div>
+                {verificacaoResultado && !verificandoSync && (
+                  <div className={`mt-2 rounded border px-3 py-2 text-[11px] flex items-center gap-2 ${
+                    verificacaoResultado.totalFaltando === 0
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
+                      : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400'
+                  }`}>
+                    {verificacaoResultado.totalFaltando === 0
+                      ? <>✓ <strong>Cobertura OK</strong> — {(verificacaoResultado.totalBanco ?? 0).toLocaleString('pt-BR')} conversas no banco, amostras 100% sincronizadas</>
+                      : <>⚠ <strong>{verificacaoResultado.totalFaltando} conversas faltando</strong> nas amostras — recomenda-se sync COMPLETO</>
+                    }
+                  </div>
+                )}
+              </div>
+            )}
 
             {syncConversasResumo && !syncConversasAtivo && (
               <div className={`rounded border p-3 text-[12px] space-y-2 ${
@@ -444,7 +533,7 @@ export function Sync() {
                 selected={modoMsg === 'recentes'}
                 onSelect={setModoMsg}
                 titulo="RECENTES"
-                descricao="Últimos 30 dias sem mensagens"
+                descricao="Últimos 30 dias — todas as conversas"
                 tempo={estimarTempo('recentes')}
               />
               <ModeCard
@@ -452,7 +541,7 @@ export function Sync() {
                 selected={modoMsg === 'completo'}
                 onSelect={setModoMsg}
                 titulo="COMPLETO"
-                descricao="Todas as conversas sem mensagens"
+                descricao="Todas as conversas — sem exceção"
                 tempo={`${estimarTempo('completo')} ⚠ overnight`}
                 aviso
               />
