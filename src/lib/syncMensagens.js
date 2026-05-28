@@ -39,9 +39,8 @@ async function buscarConversasModo(modo) {
       .gte('ultima_mensagem_at', limite)
       .order('ultima_mensagem_at', { ascending: false })
   } else {
-    // completo — backfill de conversas que nunca tiveram mensagens importadas
+    // completo — TODAS as conversas, sem exceção (upsert garante sem duplicatas)
     query = query
-      .eq('total_mensagens', 0)
       .order('ultima_mensagem_at', { ascending: false })
   }
 
