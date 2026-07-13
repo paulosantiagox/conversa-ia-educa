@@ -17,7 +17,7 @@ npm run dev -- --port 5175
 - SEMPRE branch main
 - SEMPRE pkill -f vite antes de iniciar
 - SEMPRE porta 5175
-- NUNCA fazer deploy sem o usuário pedir
+- SEMPRE commitar E dar push (git add -A && commit && push origin main) a cada modificação de código — usuário quer o GitHub sempre atualizado para ver no front. Pode commitar várias vezes.
 - NUNCA remover código existente sem confirmar
 - Estilo enterprise SaaS — denso, compacto, funcional
 - Sidebar escura (#0f172a)
