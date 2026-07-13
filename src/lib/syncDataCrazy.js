@@ -34,12 +34,12 @@ async function upsertConversa(mapped) {
   if (existente && dcUpdated && dbUpdated && dcUpdated <= dbUpdated) return { acao: 'sem_mudanca' }
 
   // Upsert atômico — evita duplicate key em inserts concorrentes
-  // precisa_sync_mensagens: true — conversa nova ou com atividade nova entra na fila
-  // de sync de mensagens (só chega aqui quando há mudança real; 'sem_mudanca' retorna antes)
+  // NÃO escrever precisa_sync_mensagens: é coluna CALCULADA na view ci_conversas
+  // (mensagens_sync_at IS NULL OR ultima_mensagem_at > mensagens_sync_at) — atualiza sozinha
   const { error } = await supabase
     .from('ci_conversas')
     .upsert(
-      { datacrazy_id, contato_numero, ...resto, precisa_sync_mensagens: true, updated_at: new Date().toISOString() },
+      { datacrazy_id, contato_numero, ...resto, updated_at: new Date().toISOString() },
       { onConflict: 'datacrazy_id' }
     )
   if (error) throw error
@@ -254,10 +254,10 @@ export async function syncMensagensConversa(conversa, onLog = () => {}) {
     if (mensagens.length > 0) {
       await organizarDadosConversa(conversaId, mensagens)
     } else {
-      // Conversa sem mensagens na API — marca como sincronizada para sair da fila
+      // Conversa sem mensagens na API — grava mensagens_sync_at (coluna real) para sair da fila.
+      // precisa_sync_mensagens NÃO é escrita: a view calcula a partir de mensagens_sync_at.
       await supabase.from('ci_conversas').update({
         total_mensagens: 0,
-        precisa_sync_mensagens: false,
         mensagens_sync_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }).eq('id', conversaId)
@@ -375,7 +375,6 @@ export async function organizarDadosConversa(conversaId, mensagens) {
     ultima_mensagem_lead_at: ultimaMensagemLeadAt,
     recebeu_valor: recebeuValor,
     recebeu_link: recebeuLink,
-    precisa_sync_mensagens: false,  // sincronizada — sai da fila (evita loop no COMPLETO)
     updated_at: new Date().toISOString(),
   }
   if (tempoRespostaMedio !== null)   updates.tempo_resposta_medio = tempoRespostaMedio
