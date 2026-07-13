@@ -118,6 +118,7 @@ export function Sync() {
   const [apiOk, setApiOk] = useState(null)
   const [testando, setTestando] = useState(true)
   const [apiTotal, setApiTotal] = useState(null)
+  const [motivoConexao, setMotivoConexao] = useState(null)
   const [historico, setHistorico] = useState([])
   const [stats, setStats] = useState({ conversas: 0, mensagens: 0, ultimoSync: null })
   const [modoConversas, setModoConversas] = useState('rapido')
@@ -168,16 +169,31 @@ export function Sync() {
 
   async function testarConexao() {
     setTestando(true)
-    try {
-      const resultado = await fetchConversations(0, 1)
-      setApiOk(true)
-      const total = resultado?.total ?? resultado?.meta?.total ?? resultado?.pagination?.total ?? null
-      if (total) setApiTotal(total)
-    } catch {
-      setApiOk(false)
-    } finally {
-      setTestando(false)
+    setMotivoConexao(null)
+    console.log('%c[SYNC v2] Testando conexão DataCrazy (com retry)...', 'color:#3b82f6;font-weight:bold')
+    const MAX = 3
+    for (let tentativa = 1; tentativa <= MAX; tentativa++) {
+      try {
+        const resultado = await fetchConversations(0, 1)
+        const total = resultado?.count ?? resultado?.total ?? resultado?.meta?.total ?? resultado?.pagination?.total ?? null
+        console.log(`%c[SYNC v2] ✓ Conectado (tentativa ${tentativa}/${MAX}) — total na API: ${total ?? '?'}`, 'color:#22c55e;font-weight:bold')
+        setApiOk(true)
+        setMotivoConexao(null)
+        if (total) setApiTotal(total)
+        setTestando(false)
+        return
+      } catch (err) {
+        console.warn(`[SYNC v2] ✗ Falha tentativa ${tentativa}/${MAX}: ${err.message}`)
+        if (tentativa < MAX) {
+          await new Promise(r => setTimeout(r, 1500))
+        } else {
+          console.error(`[SYNC v2] Conexão falhou após ${MAX} tentativas — motivo: ${err.message}`)
+          setApiOk(false)
+          setMotivoConexao(err.message)
+        }
+      }
     }
+    setTestando(false)
   }
 
   async function carregarHistorico() {
@@ -329,6 +345,9 @@ export function Sync() {
           <div>
             <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">Conexão com API DataCrazy</p>
             <p className="text-[11px] text-slate-400 mt-0.5">https://api.g1.datacrazy.io · Filtro: instâncias EEB{apiTotal ? ` · ~${apiTotal.toLocaleString('pt-BR')} conversas na API` : ''}</p>
+            {apiOk === false && motivoConexao && (
+              <p className="text-[10px] text-red-500 mt-0.5">Motivo: {motivoConexao}</p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <StatusBadgeConn ok={apiOk} testando={testando} />

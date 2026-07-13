@@ -2,10 +2,27 @@ const BASE_URL = import.meta.env.VITE_DATACRAZY_BASE_URL
 const API_KEY = import.meta.env.VITE_DATACRAZY_API_KEY
 
 async function request(path) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { Authorization: `Bearer ${API_KEY}` },
-  })
-  if (!res.ok) throw new Error(`DataCrazy ${res.status}: ${path}`)
+  if (!BASE_URL || !API_KEY) {
+    console.error('[DataCrazy] ENV faltando — BASE_URL:', !!BASE_URL, '| API_KEY:', !!API_KEY)
+    throw new Error('DataCrazy: variáveis de ambiente ausentes (reinicie o dev server)')
+  }
+  let res
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      headers: { Authorization: `Bearer ${API_KEY}` },
+    })
+  } catch (err) {
+    console.error('[DataCrazy] Falha de rede/CORS em', path, '—', err.message)
+    throw new Error(`DataCrazy: falha de rede (${err.message})`)
+  }
+  if (!res.ok) {
+    const corpo = await res.text().catch(() => '')
+    console.error(`[DataCrazy] HTTP ${res.status} ${res.statusText} em ${path}`, corpo.slice(0, 200))
+    const dica = res.status === 429 ? ' (limite de requisições — aguarde 1 min)'
+      : res.status === 401 ? ' (chave inválida ou expirada)'
+      : ''
+    throw new Error(`DataCrazy ${res.status}${dica}`)
+  }
   return res.json()
 }
 
