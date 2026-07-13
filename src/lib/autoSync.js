@@ -25,12 +25,13 @@ export function iniciarAutoSync({ onLog, onUltimoSync, onProximoSync, isQualquer
     rodando = true
 
     try {
-      // 1. Conversas
-      onLog?.(`ℹ [Auto-sync] Sincronizando conversas...`)
+      // 1. Conversas (modo rápido — só as 10 primeiras páginas = 500 mais recentes)
+      onLog?.(`ℹ [Auto-sync] Sincronizando conversas recentes...`)
       await syncConversas(
         (msg) => onLog?.(`  ${msg}`),
         () => parado,
-        () => {}
+        () => {},
+        { limitePaginas: 10 }
       )
       if (parado) return
 

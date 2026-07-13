@@ -116,7 +116,7 @@ export function SyncProvider({ children }) {
     pararAutoSyncRef.current = null
   }
 
-  async function iniciarSyncConversas() {
+  async function iniciarSyncConversas(opcoes = {}) {
     if (syncConversasAtivo) return null
     cancelConversasRef.current = false
     setSyncConversasAtivo(true)
@@ -128,7 +128,8 @@ export function SyncProvider({ children }) {
         (msg) => pushLog(setSyncConversasLogs, msg, 'conversas'),
         () => cancelConversasRef.current,
         ({ pct, processadas, estimadas }) =>
-          setSyncConversasProgresso({ pct, processadas, estimadas })
+          setSyncConversasProgresso({ pct, processadas, estimadas }),
+        opcoes
       )
       setSyncConversasProgresso(prev => ({
         ...prev,

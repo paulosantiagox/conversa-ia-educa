@@ -57,7 +57,7 @@ async function buscarLote(modo, offset = 0) {
     .from('ci_conversas')
     .select('id, datacrazy_id, contato_nome, contato_numero, consultora, total_mensagens, ultima_mensagem_at, mensagens_sync_at')
     .not('datacrazy_id', 'is', null)
-    .eq('precisa_sync_mensagens', true)   // coluna calculada na view — filtra pendentes de verdade
+    .eq('precisa_sync_mensagens', true)   // flag mantida por syncDataCrazy: true em conversa nova/alterada, false após sync
     .order('ultima_mensagem_at', { ascending: false })
     .range(offset, offset + LOTE - 1)
 
