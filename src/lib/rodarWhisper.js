@@ -93,13 +93,14 @@ export async function rodarWhisper(modo = 'teste', onLog = () => {}, onCancel = 
           onLog(`✗ Cota OpenAI esgotada — transcrição pausada. Recarregue créditos em platform.openai.com`)
           return { concluidas, erros, semCredito: true }
         }
-        const isFetchError = /fetch|network|Failed|NetworkError/i.test(err.message) || err.status === 403 || err.status === 404
-        if (isFetchError) {
+        if (err.httpStatus === 404 || err.httpStatus === 403) {
+          // 404/403 = arquivo realmente não existe mais — marca para pular de vez
           await supabase.from('ci_mensagens').update({ transcricao: '[inacessível]' }).eq('id', audios[i].id)
-          onLog(`⚠ [${i + 1}/${total}] URL inacessível — marcada para pular`)
+          onLog(`⚠ [${i + 1}/${total}] Áudio não existe mais (${err.httpStatus}) — pulado`)
         } else {
+          // rede/CORS/timeout/5xx = transitório — NÃO marca, fica pendente p/ próxima rodada
           erros++
-          onLog(`⚠ [${i + 1}/${total}] Erro: ${err.message}`)
+          onLog(`⚠ [${i + 1}/${total}] Falha temporária: ${err.message} — fica pendente`)
         }
         onProgress?.({ atual: i + 1, total, concluidas, erros, pct: Math.round(((i + 1) / total) * 100) })
       }
@@ -146,13 +147,14 @@ export async function rodarWhisper(modo = 'teste', onLog = () => {}, onCancel = 
           onLog(`✓ Concluído: ${concluidas} transcritos | ${erros} erros`)
           return { concluidas, erros, semCredito: true }
         }
-        const isFetchError = /fetch|network|Failed|NetworkError/i.test(err.message) || err.status === 403 || err.status === 404
-        if (isFetchError) {
+        if (err.httpStatus === 404 || err.httpStatus === 403) {
+          // 404/403 = arquivo realmente não existe mais — marca para pular de vez
           await supabase.from('ci_mensagens').update({ transcricao: '[inacessível]' }).eq('id', lote[i].id)
-          onLog(`⚠ [${processados}/${total}] URL inacessível — marcada para pular`)
+          onLog(`⚠ [${processados}/${total}] Áudio não existe mais (${err.httpStatus}) — pulado`)
         } else {
+          // rede/CORS/timeout/5xx = transitório — NÃO marca, fica pendente p/ próxima rodada
           erros++
-          onLog(`⚠ [${processados}/${total}] Erro: ${err.message}`)
+          onLog(`⚠ [${processados}/${total}] Falha temporária: ${err.message} — fica pendente`)
         }
         onProgress?.({ atual: processados, total, concluidas, erros, pct: Math.round((processados / total) * 100) })
       }
