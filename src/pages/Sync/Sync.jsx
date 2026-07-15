@@ -90,6 +90,9 @@ function fmtMs(ms) {
   return `${Math.floor(s / 60)}min ${s % 60}s`
 }
 
+// Re-sync de Áudios é utilitário de conserto legado — oculto do dash. Mudar para true para reexibir.
+const MOSTRAR_RESYNC_AUDIOS = false
+
 const CLASS_COLORS = {
   quente:  'text-red-500',
   morno:   'text-amber-500',
@@ -958,7 +961,8 @@ export function Sync() {
           </div>
         </div>
 
-        {/* Re-sync de Áudios */}
+        {/* Re-sync de Áudios — oculto do dash (utilitário legado); ver MOSTRAR_RESYNC_AUDIOS */}
+        {MOSTRAR_RESYNC_AUDIOS && (
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] p-3 space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1027,6 +1031,7 @@ export function Sync() {
             ))}
           </div>
         </div>
+        )}
 
         <div className="grid grid-cols-3 gap-3">
           {/* Estatísticas + saúde do banco */}
