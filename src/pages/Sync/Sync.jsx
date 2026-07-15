@@ -92,6 +92,8 @@ function fmtMs(ms) {
 
 // Re-sync de Áudios é utilitário de conserto legado — oculto do dash. Mudar para true para reexibir.
 const MOSTRAR_RESYNC_AUDIOS = false
+// Análise IA oculta do dash — será feita em fluxo dedicado para leads específicos. Mudar para true para reexibir.
+const MOSTRAR_ANALISE_IA = false
 
 const CLASS_COLORS = {
   quente:  'text-red-500',
@@ -777,7 +779,8 @@ export function Sync() {
           </div>
         </div>
 
-        {/* ─── ANÁLISE IA ─── */}
+        {/* ─── ANÁLISE IA — oculta do dash; ver MOSTRAR_ANALISE_IA ─── */}
+        {MOSTRAR_ANALISE_IA && (
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] overflow-hidden">
           <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -960,6 +963,7 @@ export function Sync() {
             )}
           </div>
         </div>
+        )}
 
         {/* Re-sync de Áudios — oculto do dash (utilitário legado); ver MOSTRAR_RESYNC_AUDIOS */}
         {MOSTRAR_RESYNC_AUDIOS && (
