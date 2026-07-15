@@ -671,6 +671,109 @@ export function Sync() {
           </div>
         </div>
 
+        {/* Transcrição de Áudios (Whisper) */}
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] p-3 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Mic size={14} className="text-pink-500" />
+              <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">Transcrição de Áudios (Whisper)</p>
+              {whisperPendentes > 0 && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-pink-50 dark:bg-pink-900/30 border border-pink-200 dark:border-pink-700 text-pink-600 dark:text-pink-400">
+                  {whisperPendentes} pendentes
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {whisperProgresso && (
+                <span className="text-[11px] text-slate-400">
+                  {whisperProgresso.atual}/{whisperProgresso.total} ({whisperProgresso.pct}%)
+                </span>
+              )}
+              {whisperAtivo ? (
+                <button
+                  onClick={pararWhisper}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors"
+                >
+                  <StopCircle size={11} /> Parar
+                </button>
+              ) : (
+                <button
+                  onClick={() => iniciarWhisper(modoWhisper)}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-medium bg-pink-600 text-white hover:bg-pink-700 transition-colors"
+                >
+                  <Mic size={11} /> Transcrever
+                </button>
+              )}
+            </div>
+          </div>
+
+          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+            Usa o modelo Whisper da OpenAI para transcrever áudios das consultoras. Apenas áudios manuais (<code className="bg-slate-100 dark:bg-slate-700 px-1 rounded">is_auto=false</code>) sem transcrição são processados.
+          </p>
+
+          {whisperSemCredito && (
+            <div className="flex items-start justify-between gap-2 bg-red-950/40 border border-red-700 rounded px-3 py-2">
+              <div className="flex items-center gap-2 text-[11px] text-red-400">
+                <AlertTriangle size={13} className="shrink-0 text-red-500" />
+                <span>
+                  <strong className="text-red-300">Cota OpenAI esgotada</strong> — Transcrição pausada. Recarregue créditos em{' '}
+                  <a href="https://platform.openai.com/account/billing" target="_blank" rel="noreferrer" className="underline text-red-300 hover:text-red-200">
+                    platform.openai.com
+                  </a>.
+                </span>
+              </div>
+              <button
+                onClick={() => setWhisperSemCredito(false)}
+                className="text-red-600 hover:text-red-400 text-[11px] shrink-0 mt-0.5"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <ModeCard modo="teste" selected={modoWhisper === 'teste'} onSelect={setModoWhisper}
+              titulo="Teste" descricao="5 áudios" tempo="~1 min" />
+            <ModeCard modo="recentes" selected={modoWhisper === 'recentes'} onSelect={setModoWhisper}
+              titulo="Recentes" descricao="200 áudios" tempo="~10 min" />
+            <ModeCard modo="completo" selected={modoWhisper === 'completo'} onSelect={setModoWhisper}
+              titulo="Completo" descricao="Todos os pendentes" tempo="Pode demorar horas" aviso />
+          </div>
+
+          {whisperProgresso && (
+            <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1">
+              <div
+                className="bg-pink-500 h-1 rounded-full transition-all duration-300"
+                style={{ width: `${whisperProgresso.pct}%` }}
+              />
+            </div>
+          )}
+
+          {whisperResultado && !whisperAtivo && (
+            <div className="flex items-center gap-4 text-[11px] bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600 px-3 py-2">
+              <span className="text-pink-500 font-semibold">{whisperResultado.concluidas} transcritos</span>
+              {whisperResultado.erros > 0 && <span className="text-amber-500">{whisperResultado.erros} erros</span>}
+              <span className="text-slate-400">{whisperPendentes} ainda pendentes</span>
+            </div>
+          )}
+
+          <div
+            ref={logsWhisperContainerRef}
+            className="h-28 overflow-y-auto bg-slate-950 rounded p-2.5 font-mono text-[11px] space-y-0.5"
+            style={{ scrollbarWidth: 'thin' }}
+          >
+            {whisperLogs.length === 0 && !whisperAtivo && (
+              <p className="text-slate-500">Clique em "Transcrever" para iniciar...</p>
+            )}
+            {whisperLogs.map((l, i) => (
+              <div key={i} className="flex gap-2">
+                <span className="text-slate-600 shrink-0">{l.ts}</span>
+                <LogLine msg={l.msg} />
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* ─── ANÁLISE IA ─── */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] overflow-hidden">
           <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
@@ -917,109 +1020,6 @@ export function Sync() {
               <p className="text-slate-500">Clique em "Corrigir Áudios" para iniciar...</p>
             )}
             {resyncLogs.map((l, i) => (
-              <div key={i} className="flex gap-2">
-                <span className="text-slate-600 shrink-0">{l.ts}</span>
-                <LogLine msg={l.msg} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Transcrição de Áudios (Whisper) */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] p-3 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Mic size={14} className="text-pink-500" />
-              <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">Transcrição de Áudios (Whisper)</p>
-              {whisperPendentes > 0 && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-pink-50 dark:bg-pink-900/30 border border-pink-200 dark:border-pink-700 text-pink-600 dark:text-pink-400">
-                  {whisperPendentes} pendentes
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {whisperProgresso && (
-                <span className="text-[11px] text-slate-400">
-                  {whisperProgresso.atual}/{whisperProgresso.total} ({whisperProgresso.pct}%)
-                </span>
-              )}
-              {whisperAtivo ? (
-                <button
-                  onClick={pararWhisper}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors"
-                >
-                  <StopCircle size={11} /> Parar
-                </button>
-              ) : (
-                <button
-                  onClick={() => iniciarWhisper(modoWhisper)}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-medium bg-pink-600 text-white hover:bg-pink-700 transition-colors"
-                >
-                  <Mic size={11} /> Transcrever
-                </button>
-              )}
-            </div>
-          </div>
-
-          <p className="text-[11px] text-slate-400 dark:text-slate-500">
-            Usa o modelo Whisper da OpenAI para transcrever áudios das consultoras. Apenas áudios manuais (<code className="bg-slate-100 dark:bg-slate-700 px-1 rounded">is_auto=false</code>) sem transcrição são processados.
-          </p>
-
-          {whisperSemCredito && (
-            <div className="flex items-start justify-between gap-2 bg-red-950/40 border border-red-700 rounded px-3 py-2">
-              <div className="flex items-center gap-2 text-[11px] text-red-400">
-                <AlertTriangle size={13} className="shrink-0 text-red-500" />
-                <span>
-                  <strong className="text-red-300">Cota OpenAI esgotada</strong> — Transcrição pausada. Recarregue créditos em{' '}
-                  <a href="https://platform.openai.com/account/billing" target="_blank" rel="noreferrer" className="underline text-red-300 hover:text-red-200">
-                    platform.openai.com
-                  </a>.
-                </span>
-              </div>
-              <button
-                onClick={() => setWhisperSemCredito(false)}
-                className="text-red-600 hover:text-red-400 text-[11px] shrink-0 mt-0.5"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            <ModeCard modo="teste" selected={modoWhisper === 'teste'} onSelect={setModoWhisper}
-              titulo="Teste" descricao="5 áudios" tempo="~1 min" />
-            <ModeCard modo="recentes" selected={modoWhisper === 'recentes'} onSelect={setModoWhisper}
-              titulo="Recentes" descricao="200 áudios" tempo="~10 min" />
-            <ModeCard modo="completo" selected={modoWhisper === 'completo'} onSelect={setModoWhisper}
-              titulo="Completo" descricao="Todos os pendentes" tempo="Pode demorar horas" aviso />
-          </div>
-
-          {whisperProgresso && (
-            <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1">
-              <div
-                className="bg-pink-500 h-1 rounded-full transition-all duration-300"
-                style={{ width: `${whisperProgresso.pct}%` }}
-              />
-            </div>
-          )}
-
-          {whisperResultado && !whisperAtivo && (
-            <div className="flex items-center gap-4 text-[11px] bg-slate-50 dark:bg-slate-700/50 rounded border border-slate-200 dark:border-slate-600 px-3 py-2">
-              <span className="text-pink-500 font-semibold">{whisperResultado.concluidas} transcritos</span>
-              {whisperResultado.erros > 0 && <span className="text-amber-500">{whisperResultado.erros} erros</span>}
-              <span className="text-slate-400">{whisperPendentes} ainda pendentes</span>
-            </div>
-          )}
-
-          <div
-            ref={logsWhisperContainerRef}
-            className="h-28 overflow-y-auto bg-slate-950 rounded p-2.5 font-mono text-[11px] space-y-0.5"
-            style={{ scrollbarWidth: 'thin' }}
-          >
-            {whisperLogs.length === 0 && !whisperAtivo && (
-              <p className="text-slate-500">Clique em "Transcrever" para iniciar...</p>
-            )}
-            {whisperLogs.map((l, i) => (
               <div key={i} className="flex gap-2">
                 <span className="text-slate-600 shrink-0">{l.ts}</span>
                 <LogLine msg={l.msg} />
