@@ -67,7 +67,8 @@ export function SyncProvider({ children }) {
   const cancelWhisperRef = useRef(false)
 
   // ─── Auto-sync ───
-  const [autoSyncAtivo, setAutoSyncAtivo] = useState(() => localStorage.getItem('conversia_autosync') === 'true')
+  // Auto-sync do navegador desativado — a automação agora roda no servidor (cron VPS, scripts/autosync.mjs).
+  const [autoSyncAtivo, setAutoSyncAtivo] = useState(false)
   const [ultimoAutoSync, setUltimoAutoSync] = useState(null)
   const [proximoAutoSync, setProximoAutoSync] = useState(null)
   const [autoSyncLogs, setAutoSyncLogs] = useState([])

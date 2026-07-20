@@ -302,47 +302,20 @@ export function Sync() {
       <Topbar title="Sync DataCrazy" />
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-900">
 
-        {/* Auto-sync */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] px-3 py-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Timer size={13} className="text-slate-400" />
-              <div>
-                <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">Sincronização Automática</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Sincroniza conversas, mensagens, áudios e tags pendentes a cada 10 min</p>
-              </div>
+        {/* Auto-sync — agora roda no servidor (cron no VPS), sem depender de aba aberta */}
+        <div className="bg-green-50 dark:bg-green-900/15 border border-green-200 dark:border-green-800 rounded-[6px] px-3 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+            </span>
+            <div>
+              <p className="text-[12px] font-semibold text-green-700 dark:text-green-400">Sincronização automática ativa no servidor</p>
+              <p className="text-[11px] text-green-700/70 dark:text-green-500/80 mt-0.5">
+                Conversas, mensagens, áudios e tags sincronizam sozinhos <strong>a cada 15 min</strong>, direto no servidor — <strong>não precisa deixar aba aberta</strong>. As opções abaixo são para rodar algo manualmente quando quiser.
+              </p>
             </div>
-            {/* Toggle */}
-            <button
-              onClick={autoSyncAtivo ? desativarAutoSync : ativarAutoSync}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${autoSyncAtivo ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'}`}
-            >
-              <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${autoSyncAtivo ? 'translate-x-4' : 'translate-x-0'}`} />
-            </button>
           </div>
-          {autoSyncAtivo ? (
-            <div className="flex items-center gap-4 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700">
-              <span className="flex items-center gap-1.5 text-[11px] text-green-600 dark:text-green-400 font-medium">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-                </span>
-                Auto-sync ativo
-              </span>
-              {ultimoAutoSync && (
-                <span className="text-[11px] text-slate-400">
-                  Último: {ultimoAutoSync.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </span>
-              )}
-              {proximoAutoSync && (
-                <span className="text-[11px] text-slate-400">
-                  Próximo: {proximoAutoSync.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </span>
-              )}
-            </div>
-          ) : (
-            <p className="text-[11px] text-slate-400 mt-1.5">Desativado — sync manual apenas</p>
-          )}
         </div>
 
         {/* Status da conexão */}
