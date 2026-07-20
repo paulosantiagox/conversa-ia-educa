@@ -1,6 +1,7 @@
 import { syncConversas } from './syncDataCrazy'
 import { syncMensagensModo } from './syncMensagens'
 import { rodarWhisper } from './rodarWhisper'
+import { syncTagsModo } from './syncTags'
 
 const INTERVALO_MS = 10 * 60 * 1000 // 10 minutos
 
@@ -62,6 +63,19 @@ export function iniciarAutoSync({ onLog, onUltimoSync, onProximoSync, isQualquer
       if (whisperRes?.semCredito) {
         onLog?.(`⚠ [Auto-sync] Cota OpenAI esgotada — transcrição pausada até recarregar créditos`)
       }
+      if (parado) return
+
+      await new Promise(r => setTimeout(r, 3000))
+      if (parado) return
+
+      // 4. Tags dos leads (recentes — leads criados recentemente, onde há atividade de tag)
+      onLog?.(`ℹ [Auto-sync] Sincronizando tags dos leads...`)
+      await syncTagsModo(
+        'recentes',
+        (msg) => onLog?.(`  ${msg}`),
+        () => parado,
+        () => {}
+      )
 
       const fim = new Date()
       onLog?.(`✓ [Auto-sync] Ciclo concluído — ${fim.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`)
