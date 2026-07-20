@@ -70,6 +70,7 @@ export function Inbox() {
   const showSkeleton = !skeletonDone || loadingConversas
 
   const [conversaSelecionada, setConversaSelecionada] = useState(null)
+  const [tagsConversa, setTagsConversa] = useState([])
   const [statusLocal, setStatusLocal] = useState(null)
   const statusAtual = statusLocal ?? conversaSelecionada?.classificacao_ia
 
@@ -122,6 +123,15 @@ export function Inbox() {
 
   // useMensagens hook
   const { mensagens, loading: loadingMensagens } = useMensagens(conversaSelecionada?.id)
+
+  // Tags do lead (DataCrazy) para a conversa selecionada — casa por últimos 8 dígitos
+  useEffect(() => {
+    const num = conversaSelecionada?.contato_numero
+    const f8 = num ? String(num).replace(/\D/g, '').slice(-8) : null
+    if (!f8) { setTagsConversa([]); return }
+    supabase.from('ci_tags').select('tag_nome, tag_cor').eq('ativa', true).eq('contato_final8', f8)
+      .then(({ data }) => setTagsConversa(data ?? []))
+  }, [conversaSelecionada?.contato_numero])
 
   // Scroll para fim quando mensagens carregam
   useEffect(() => {
@@ -297,6 +307,17 @@ export function Inbox() {
                     </span>
                   )}
                 </div>
+                {tagsConversa.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1 mt-1">
+                    {tagsConversa.map((t, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full"
+                        style={{ backgroundColor: (t.tag_cor || '#94a3b8') + '22', color: t.tag_cor || '#64748b' }}>
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: t.tag_cor || '#94a3b8' }} />
+                        {t.tag_nome}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <button
                     onClick={() => {

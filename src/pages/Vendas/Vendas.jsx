@@ -93,6 +93,7 @@ export function Vendas() {
   const [porConsultora, setPorConsultora] = useState([])
   const [porDia, setPorDia] = useState([])
   const [vendas, setVendas] = useState([])
+  const [tagsMap, setTagsMap] = useState({})
   const [codigo, setCodigo] = useState(null)
   const [loading, setLoading] = useState(true)
   const [atualizadoAt, setAtualizadoAt] = useState(null)
@@ -107,7 +108,7 @@ export function Vendas() {
     const params = { p_inicio: inicio, p_fim: fim }
     let listaQ = supabase
       .from('ci_vendas')
-      .select('venda_id, data_venda, valor_venda, cod_consultora, nome_curso, metodo_pagamento, plataforma, whatsapp_comprador, whatsapp_associado, casada, match_por, conversa_id, conversa_contato_nome')
+      .select('venda_id, data_venda, valor_venda, cod_consultora, nome_curso, metodo_pagamento, plataforma, whatsapp_comprador, whatsapp_associado, whatsapp_final8, casada, match_por, conversa_id, conversa_contato_nome')
       .gte('data_venda', inicio).lt('data_venda', fim)
       .order('data_venda', { ascending: false }).limit(500)
     if (codigo) listaQ = listaQ.eq('cod_consultora', codigo)
@@ -122,6 +123,14 @@ export function Vendas() {
     setPorConsultora(pc ?? [])
     setPorDia((pd ?? []).map(x => ({ label: fmtDiaCurto(x.dia), vendas: Number(x.vendas), faturamento: Number(x.faturamento) })))
     setVendas(lista ?? [])
+    // Tags ativas dos leads dessas vendas (casa por final8)
+    const finais = [...new Set((lista ?? []).map(v => v.whatsapp_final8).filter(Boolean))]
+    const map = {}
+    if (finais.length) {
+      const { data: tgs } = await supabase.from('ci_tags').select('contato_final8, tag_nome, tag_cor').eq('ativa', true).in('contato_final8', finais)
+      for (const t of tgs ?? []) (map[t.contato_final8] ??= []).push(t)
+    }
+    setTagsMap(map)
     setAtualizadoAt(new Date())
   }, [periodo, codigo])
 
@@ -280,6 +289,7 @@ export function Vendas() {
                     <th className="px-3 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase">Consultora</th>
                     <th className="px-3 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase">Produto</th>
                     <th className="px-3 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase">Pgto</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase">Tags</th>
                     <th className="px-3 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase">Conversa</th>
                   </tr>
                 </thead>
@@ -304,6 +314,19 @@ export function Vendas() {
                       </td>
                       <td className="px-3 py-2.5 text-[10px] text-slate-500 max-w-[180px] truncate" title={v.nome_curso}>{v.nome_curso ?? '—'}</td>
                       <td className="px-3 py-2.5 text-[10px] text-slate-500 whitespace-nowrap">{v.metodo_pagamento ?? '—'}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex flex-wrap items-center gap-1 max-w-[130px]">
+                          {(tagsMap[v.whatsapp_final8] ?? []).map((t, i) => (
+                            <span key={i} title={t.tag_nome}
+                              className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                              style={{ backgroundColor: (t.tag_cor || '#94a3b8') + '22', color: t.tag_cor || '#64748b' }}>
+                              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: t.tag_cor || '#94a3b8' }} />
+                              {(t.tag_nome || '').replace(/ - EED$/,'').replace(/^[🟢🔵⚪️\s]+/,'').slice(0, 12)}
+                            </span>
+                          ))}
+                          {!(tagsMap[v.whatsapp_final8] ?? []).length && <span className="text-[10px] text-slate-300">—</span>}
+                        </div>
+                      </td>
                       <td className="px-3 py-2.5">
                         {v.casada ? (
                           <div className="flex items-center gap-1">
