@@ -157,7 +157,7 @@ export function Sync() {
     const carregar = () => supabase
       .from('ci_autosync_logs')
       .select('executado_at, status, duracao_seg, conversas, mensagens, tags, whisper, erros')
-      .order('executado_at', { ascending: false }).limit(5)
+      .order('executado_at', { ascending: false }).limit(3)
       .then(({ data }) => setAutosyncLogs(data ?? []))
     carregar()
     const t = setInterval(carregar, 60000)
