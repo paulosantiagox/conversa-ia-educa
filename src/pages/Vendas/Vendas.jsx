@@ -107,7 +107,7 @@ export function Vendas() {
     const params = { p_inicio: inicio, p_fim: fim }
     let listaQ = supabase
       .from('ci_vendas')
-      .select('venda_id, data_venda, valor_venda, cod_consultora, nome_curso, metodo_pagamento, plataforma, whatsapp_comprador, casada, conversa_id, conversa_contato_nome')
+      .select('venda_id, data_venda, valor_venda, cod_consultora, nome_curso, metodo_pagamento, plataforma, whatsapp_comprador, whatsapp_associado, casada, match_por, conversa_id, conversa_contato_nome')
       .gte('data_venda', inicio).lt('data_venda', fim)
       .order('data_venda', { ascending: false }).limit(500)
     if (codigo) listaQ = listaQ.eq('cod_consultora', codigo)
@@ -288,9 +288,14 @@ export function Vendas() {
                     <tr key={v.venda_id} className="border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                       <td className="px-3 py-2.5 text-[11px] text-slate-500 whitespace-nowrap">{fmtData(v.data_venda)}</td>
                       <td className="px-3 py-2.5">
-                        <button onClick={() => copiar(v.whatsapp_comprador)} className="flex items-center gap-1 text-[11px] font-mono text-slate-600 dark:text-slate-300 hover:text-blue-500">
+                        <button onClick={() => copiar(v.whatsapp_comprador)} className="flex items-center gap-1 text-[11px] font-mono text-slate-600 dark:text-slate-300 hover:text-blue-500" title="Número que pagou">
                           <Copy size={9} /> {v.whatsapp_comprador || '—'}
                         </button>
+                        {v.whatsapp_associado && v.whatsapp_associado !== v.whatsapp_comprador && (
+                          <button onClick={() => copiar(v.whatsapp_associado)} className="flex items-center gap-1 text-[9px] font-mono text-purple-500 hover:text-purple-700 mt-0.5" title="Número associado — onde o lead conversou">
+                            <Copy size={8} /> assoc: {v.whatsapp_associado}
+                          </button>
+                        )}
                       </td>
                       <td className="px-3 py-2.5 text-right text-[12px] font-bold text-green-600 whitespace-nowrap">{brlFull(v.valor_venda)}</td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
@@ -301,11 +306,17 @@ export function Vendas() {
                       <td className="px-3 py-2.5 text-[10px] text-slate-500 whitespace-nowrap">{v.metodo_pagamento ?? '—'}</td>
                       <td className="px-3 py-2.5">
                         {v.casada ? (
-                          <button onClick={() => navigate(`/inbox?id=${v.conversa_id}`)}
-                            className="flex items-center gap-1 px-2 py-1 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded text-[10px] text-green-700 dark:text-green-400 hover:bg-green-100 transition-colors whitespace-nowrap max-w-[160px]">
-                            <Eye size={10} className="shrink-0" />
-                            <span className="truncate">{v.conversa_contato_nome || 'ver conversa'}</span>
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => navigate(`/inbox?id=${v.conversa_id}`)}
+                              className="flex items-center gap-1 px-2 py-1 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded text-[10px] text-green-700 dark:text-green-400 hover:bg-green-100 transition-colors whitespace-nowrap max-w-[150px]">
+                              <Eye size={10} className="shrink-0" />
+                              <span className="truncate">{v.conversa_contato_nome || 'ver conversa'}</span>
+                            </button>
+                            {v.match_por === 'associado' && (
+                              <span title="Casada pelo número associado — comprou com um número, conversou por outro"
+                                className="text-[8px] font-bold text-purple-500 bg-purple-50 dark:bg-purple-900/20 px-1 py-0.5 rounded">↔ assoc</span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-[10px] text-slate-300 dark:text-slate-600">sem conversa</span>
                         )}
