@@ -61,9 +61,10 @@ export function Sidebar() {
       items: [
         { to: '/vendas',  label: 'Vendas',      icon: ShoppingCart },
         { to: '/funil',   label: 'Funil',       icon: TrendingUp },
-        { to: '/ranking', label: 'Ranking',      icon: Trophy },
+        // Ocultos do menu (código/rotas mantidos — reativar removendo o comentário):
+        // { to: '/ranking', label: 'Ranking', icon: Trophy },  // não usado
+        // { to: '/matriculados', label: 'Matriculados', icon: UserCheck, badge: badges.matriculados, badgeColor: 'bg-green-500' },  // substituído por Vendas
         { to: '/followup',     label: 'Follow-up IA',  icon: Sparkles,   badge: badges.followups,    badgeColor: 'bg-purple-500' },
-        { to: '/matriculados', label: 'Matriculados',  icon: UserCheck,  badge: badges.matriculados, badgeColor: 'bg-green-500' },
         { to: '/acao-fim-mes', label: 'Ação Final Mês', icon: Target },
       ],
     },
