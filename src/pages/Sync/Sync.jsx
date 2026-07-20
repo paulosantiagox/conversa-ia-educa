@@ -309,7 +309,7 @@ export function Sync() {
               <Timer size={13} className="text-slate-400" />
               <div>
                 <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">Sincronização Automática</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Sincroniza conversas, mensagens e áudios pendentes a cada 10 min</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Sincroniza conversas, mensagens, áudios e tags pendentes a cada 10 min</p>
               </div>
             </div>
             {/* Toggle */}
