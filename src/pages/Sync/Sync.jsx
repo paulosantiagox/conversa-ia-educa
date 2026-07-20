@@ -124,6 +124,7 @@ export function Sync() {
   const [testando, setTestando] = useState(true)
   const [apiTotal, setApiTotal] = useState(null)
   const [motivoConexao, setMotivoConexao] = useState(null)
+  const [autosyncLogs, setAutosyncLogs] = useState([])
   const [historico, setHistorico] = useState([])
   const [stats, setStats] = useState({ conversas: 0, mensagens: 0, ultimoSync: null })
   const [modoConversas, setModoConversas] = useState('rapido')
@@ -151,6 +152,17 @@ export function Sync() {
   const logsIAContainerRef = useRef(null)
 
   useEffect(() => { testarConexao() }, [])
+  // Mini-log do auto-sync do servidor (cron VPS) — pra saber que está rodando / detectar erro
+  useEffect(() => {
+    const carregar = () => supabase
+      .from('ci_autosync_logs')
+      .select('executado_at, status, duracao_seg, conversas, mensagens, tags, whisper, erros')
+      .order('executado_at', { ascending: false }).limit(5)
+      .then(({ data }) => setAutosyncLogs(data ?? []))
+    carregar()
+    const t = setInterval(carregar, 60000)
+    return () => clearInterval(t)
+  }, [])
   useEffect(() => { carregarHistorico(); carregarStats() }, [])
   useEffect(() => { carregarStatsIA() }, [])
   useEffect(() => { if (logsContainerRef.current) logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight }, [syncConversasLogs])
@@ -302,21 +314,49 @@ export function Sync() {
       <Topbar title="Sync DataCrazy" />
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-900">
 
-        {/* Auto-sync — agora roda no servidor (cron no VPS), sem depender de aba aberta */}
-        <div className="bg-green-50 dark:bg-green-900/15 border border-green-200 dark:border-green-800 rounded-[6px] px-3 py-2.5">
-          <div className="flex items-center gap-2.5">
-            <span className="relative flex h-2.5 w-2.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
-            </span>
-            <div>
-              <p className="text-[12px] font-semibold text-green-700 dark:text-green-400">Sincronização automática ativa no servidor</p>
-              <p className="text-[11px] text-green-700/70 dark:text-green-500/80 mt-0.5">
-                Conversas, mensagens, áudios e tags sincronizam sozinhos <strong>a cada 15 min</strong>, direto no servidor — <strong>não precisa deixar aba aberta</strong>. As opções abaixo são para rodar algo manualmente quando quiser.
-              </p>
+        {/* Auto-sync server-side (cron VPS) — status + mini-log de monitoramento */}
+        {(() => {
+          const ult = autosyncLogs[0]
+          const minAtras = ult ? Math.round((Date.now() - new Date(ult.executado_at).getTime()) / 60000) : null
+          const alerta = ult && (ult.status === 'erro' || minAtras > 25)
+          const aguardando = !ult
+          const cls = alerta ? 'bg-amber-50 dark:bg-amber-900/15 border-amber-200 dark:border-amber-800'
+            : aguardando ? 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+            : 'bg-green-50 dark:bg-green-900/15 border-green-200 dark:border-green-800'
+          return (
+            <div className={`border rounded-[6px] px-3 py-2.5 ${cls}`}>
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                  {!alerta && !aguardando && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />}
+                  <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${alerta ? 'bg-amber-500' : aguardando ? 'bg-slate-400' : 'bg-green-500'}`} />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[12px] font-semibold ${alerta ? 'text-amber-700 dark:text-amber-400' : aguardando ? 'text-slate-600 dark:text-slate-300' : 'text-green-700 dark:text-green-400'}`}>
+                    {alerta ? (ult.status === 'erro' ? 'Auto-sync do servidor com erro no último ciclo' : `Auto-sync do servidor sem rodar há ${minAtras} min — verifique o cron`)
+                      : aguardando ? 'Auto-sync do servidor — aguardando 1º ciclo (configure o cron no VPS)'
+                      : 'Sincronização automática ativa no servidor'}
+                  </p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                    Conversas, mensagens, áudios e tags a cada 15 min, direto no servidor — não precisa deixar aba aberta.
+                  </p>
+                </div>
+              </div>
+              {autosyncLogs.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50 space-y-0.5">
+                  <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Últimos ciclos</p>
+                  {autosyncLogs.map((l, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[10px] font-mono">
+                      <span className={l.status === 'ok' ? 'text-green-500' : 'text-red-500'}>{l.status === 'ok' ? '✓' : '✗'}</span>
+                      <span className="text-slate-500 dark:text-slate-400 w-[92px] shrink-0">{new Date(l.executado_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-slate-400 w-8 shrink-0">{l.duracao_seg}s</span>
+                      <span className="text-slate-500 dark:text-slate-400 truncate">conv {l.conversas} · msg {l.mensagens} · tags {l.tags} · whisper {l.whisper}{l.erros ? ` · ⚠ ${l.erros}` : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        </div>
+          )
+        })()}
 
         {/* Status da conexão */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] px-3 py-2.5 flex items-center justify-between">

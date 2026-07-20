@@ -84,6 +84,7 @@ async function syncConversasRapido() {
     skip += TAKE; pagina++; await delay(1000)
   }
   log(`  conversas: ${mud} novas/atualizadas (${pagina} pág)`)
+  return mud
 }
 
 // ─── Mensagens (organizarDadosConversa portado) ────────────────────────────────
@@ -165,6 +166,7 @@ async function syncMensagens24h() {
     if (lote.length < 200) break
   }
   log(`  mensagens 24h: ${total} conversas sincronizadas`)
+  return total
 }
 
 // ─── Tags ───────────────────────────────────────────────────────────────────
@@ -189,6 +191,7 @@ async function syncTagsRecentes() {
     skip += TAKE; pagina++; await delay(1000)
   }
   log(`  tags: ${comTags} leads com tags atualizados`)
+  return comTags
 }
 
 // ─── Whisper LOCAL (self-hosted na VPS via whisper-ctranslate2) ────────────────
@@ -219,7 +222,7 @@ async function transcreverPendentes() {
     .select('id, audio_url, datacrazy_id, conversa_id')
     .eq('tipo', 'audio').is('transcricao', null).not('audio_url', 'is', null).eq('is_auto', false)
     .limit(200)
-  if (!pend?.length) { log('  whisper: 0 pendentes'); return }
+  if (!pend?.length) { log('  whisper: 0 pendentes'); return { ok: 0, cache: 0 } }
   let ok = 0, cache = 0
   for (const a of pend) {
     // cache por audio_url
@@ -253,16 +256,28 @@ async function transcreverPendentes() {
     await delay(WHISPER_LOCAL ? 50 : 300)
   }
   log(`  whisper: ${ok} transcritos, ${cache} reaproveitados (cache)`)
+  return { ok, cache }
 }
 
 // ─── Ciclo ────────────────────────────────────────────────────────────────────
 ;(async () => {
   const t0 = Date.now()
   log('▶ Auto-sync server-side iniciado')
-  try { await syncConversasRapido() } catch (e) { log('  ✗ conversas:', e.message) }
-  try { await syncMensagens24h() }    catch (e) { log('  ✗ mensagens:', e.message) }
-  try { await syncTagsRecentes() }    catch (e) { log('  ✗ tags:', e.message) }
-  try { await transcreverPendentes() } catch (e) { log('  ✗ whisper:', e.message) }
-  log(`✓ Ciclo concluído em ${Math.round((Date.now() - t0) / 1000)}s`)
+  const r = { conversas: 0, mensagens: 0, tags: 0, whisper: 0 }
+  const erros = []
+  try { r.conversas = await syncConversasRapido() } catch (e) { erros.push('conversas: ' + e.message); log('  ✗ conversas:', e.message) }
+  try { r.mensagens = await syncMensagens24h() }    catch (e) { erros.push('mensagens: ' + e.message); log('  ✗ mensagens:', e.message) }
+  try { r.tags = await syncTagsRecentes() }         catch (e) { erros.push('tags: ' + e.message); log('  ✗ tags:', e.message) }
+  try { const w = await transcreverPendentes(); r.whisper = w?.ok ?? 0 } catch (e) { erros.push('whisper: ' + e.message); log('  ✗ whisper:', e.message) }
+  const dur = Math.round((Date.now() - t0) / 1000)
+  log(`✓ Ciclo concluído em ${dur}s`)
+  // Registra o ciclo para o mini-log do front detectar funcionamento/erros
+  try {
+    await supabase.from('ci_autosync_logs').insert({
+      duracao_seg: dur, status: erros.length ? 'erro' : 'ok',
+      conversas: r.conversas, mensagens: r.mensagens, tags: r.tags, whisper: r.whisper,
+      erros: erros.length ? erros.join(' | ') : null,
+    })
+  } catch (e) { log('  ⚠ não gravou log:', e.message) }
   process.exit(0)
 })()
