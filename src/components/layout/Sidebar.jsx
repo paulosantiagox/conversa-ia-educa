@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, MessageSquare, Flame, Bell, TrendingUp, Trophy,
-  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap, Settings, RefreshCw, DollarSign, UserCheck, Target
+  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap, Settings, RefreshCw, DollarSign, UserCheck, Target, ShoppingCart
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -59,6 +59,7 @@ export function Sidebar() {
     {
       section: 'COMERCIAL',
       items: [
+        { to: '/vendas',  label: 'Vendas',      icon: ShoppingCart },
         { to: '/funil',   label: 'Funil',       icon: TrendingUp },
         { to: '/ranking', label: 'Ranking',      icon: Trophy },
         { to: '/followup',     label: 'Follow-up IA',  icon: Sparkles,   badge: badges.followups,    badgeColor: 'bg-purple-500' },

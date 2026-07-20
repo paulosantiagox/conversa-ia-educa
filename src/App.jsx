@@ -19,6 +19,7 @@ import { AnaliseIA } from './pages/AnaliseIA/AnaliseIA'
 import { Custos } from './pages/Custos/Custos'
 import { Matriculados } from './pages/Matriculados/Matriculados'
 import { AcaoFimMes } from './pages/AcaoFimMes/AcaoFimMes'
+import { Vendas } from './pages/Vendas/Vendas'
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/custos" element={<Custos />} />
             <Route path="/matriculados" element={<Matriculados />} />
             <Route path="/acao-fim-mes" element={<AcaoFimMes />} />
+            <Route path="/vendas" element={<Vendas />} />
           </Routes>
         </MainLayout>
       </FiltroProvider>
