@@ -17,6 +17,25 @@
 **Recomendação de MVP da Aba de Recuperação (o que fazer primeiro):**
 KPIs do topo → os 2 baldes → fila priorizada (Bloco 5) → reagendados (Bloco 6). O resto (motivos por R$, curva de esfriamento, funil de toques, placar) entra depois. Precisa de uma tabela nova `ci_recuperacao` (status por lead: atribuido_a, status, resultado, motivo, agendado_para) pro lock "em recuperação" e pro registro obrigatório de resultado.
 
+## 🔎 Prioridade atual (definida 20/07/2026): ANÁLISE antes da tela
+
+Nomenclatura: **não usar "balde"**. Chamar de **Frentes de recuperação** (ou "Filas"). Duas frentes: `Recebeu link · não pagou` e `Recebeu valor · sem link`.
+
+O usuário quer, ANTES de construir a Aba de Recuperação, **entender o que faz venda acontecer** — analisar as conversas e destilar padrões. Isso funde Fase 4 (skill) + Fase 2 (motivos), feito por IA sobre as conversas reais.
+
+**Enabler novo e importante:** agora temos **transcrição de áudio** (49k áudios). Metade da conversa é áudio — então a análise finalmente fica COMPLETA (texto + áudio).
+
+**Os 3 grupos a analisar (cohorts):**
+1. **Ganhou** (conversa casada com venda em `ci_vendas`) → por que deu certo: desejo do cliente, objeção principal, como foi contornada, gatilho do fechamento.
+2. **Perdeu-link** (recebeu link, não pagou · 2.540) → onde/por que parou depois do link.
+3. **Perdeu-valor** (recebeu valor, sem link · 7.487) → por que não avançou pro link.
+
+**Pipeline de análise:** amostra de cada cohort → Claude lê a conversa inteira (texto+áudio) com prompt estruturado → extrai JSON (desejo, objeção principal, o que funcionou/faltou, momento da perda, motivo) → agrega e **compara ganhou × perdeu** → destila num **playbook/skill** (documento com regras + exemplos reais). Vira: treino das consultoras + script da recuperação + base da IA autônoma. Custo: chamadas Anthropic (amostra controlada).
+
+**Verificar a estrutura completa da venda (funil):** o lado CONVERSA a gente analisa 100% (temos o dado). O lado PÁGINA/anúncio (o que o lead vê ANTES de mandar msg — landing page, VSL, criativo) **não está no banco** — pra analisar isso o usuário precisa fornecer o conteúdo da página/anúncio. Objetivo: conciliar página + conversa pra ver se a abordagem é a melhor.
+
+**Segmentar comprador por origem** (organic × google) → viável com `eja_vendas.lead_utm_source`. Fica pra depois.
+
 ## 0. Status
 
 | Fase | O que é | Status |
