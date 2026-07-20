@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DollarSign, ShoppingCart, TrendingUp, Users, Link2, Copy, Eye, RefreshCw, CalendarDays } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { DollarSign, ShoppingCart, TrendingUp, Link2, Copy, Eye, RefreshCw, CalendarDays, Receipt } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts'
 import { Topbar } from '../../components/layout/Topbar'
 import { supabase } from '../../lib/supabase'
 import { useToast } from '../../contexts/ToastContext'
@@ -13,12 +13,18 @@ const COR_CODIGO = {
   vkm: 'text-green-600 dark:text-green-400',
   outros: 'text-slate-500 dark:text-slate-400',
 }
+const LS_KEY = 'conversia_vendas_filtro'
 
 function brl(v) {
   return Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 }
 function brlFull(v) {
   return Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+function compact(v) {
+  const n = Number(v ?? 0)
+  if (n >= 1000) return (n / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k'
+  return String(Math.round(n))
 }
 function fmtData(iso) {
   if (!iso) return '—'
@@ -28,6 +34,43 @@ function fmtDiaCurto(iso) {
   if (!iso) return ''
   return new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 }
+function ymd(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Calcula [inicio, fim) em ISO a partir do preset/datas custom
+function calcPeriodo({ preset, dInicio, dFim }) {
+  const now = new Date()
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate()
+  const iso = (dt) => dt.toISOString()
+  if (preset === 'mes_atual')  return { inicio: iso(new Date(y, m, 1)),      fim: iso(new Date(y, m + 1, 1)), label: 'Este mês' }
+  if (preset === 'mes_passado')return { inicio: iso(new Date(y, m - 1, 1)),  fim: iso(new Date(y, m, 1)),     label: 'Mês passado' }
+  if (preset === '7d')         return { inicio: iso(new Date(y, m, d - 6)),  fim: iso(new Date(y, m, d + 1)), label: 'Últimos 7 dias' }
+  if (preset === '30d')        return { inicio: iso(new Date(y, m, d - 29)), fim: iso(new Date(y, m, d + 1)), label: 'Últimos 30 dias' }
+  if (preset === 'ano')        return { inicio: iso(new Date(y, 0, 1)),      fim: iso(new Date(y + 1, 0, 1)), label: 'Este ano' }
+  // custom
+  const ini = new Date(dInicio + 'T00:00:00')
+  const fimD = new Date(dFim + 'T00:00:00'); fimD.setDate(fimD.getDate() + 1)
+  return { inicio: iso(ini), fim: iso(fimD), label: `${fmtDiaCurto(dInicio)} a ${fmtDiaCurto(dFim)}` }
+}
+
+function carregarFiltroSalvo() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_KEY))
+    if (s?.preset) return s
+  } catch { /* ignore */ }
+  const now = new Date()
+  return { preset: 'mes_atual', dInicio: ymd(new Date(now.getFullYear(), now.getMonth(), 1)), dFim: ymd(now) }
+}
+
+const PRESETS = [
+  { key: 'mes_atual', label: 'Este mês' },
+  { key: 'mes_passado', label: 'Mês passado' },
+  { key: '7d', label: '7 dias' },
+  { key: '30d', label: '30 dias' },
+  { key: 'ano', label: 'Este ano' },
+  { key: 'custom', label: 'Personalizado' },
+]
 
 function StatCard({ label, value, sub, icon: Icon, cor }) {
   return (
@@ -45,6 +88,7 @@ function StatCard({ label, value, sub, icon: Icon, cor }) {
 export function Vendas() {
   const navigate = useNavigate()
   const toast = useToast()
+  const [filtro, setFiltro] = useState(carregarFiltroSalvo)
   const [stats, setStats] = useState(null)
   const [porConsultora, setPorConsultora] = useState([])
   const [porDia, setPorDia] = useState([])
@@ -53,54 +97,51 @@ export function Vendas() {
   const [loading, setLoading] = useState(true)
   const [atualizadoAt, setAtualizadoAt] = useState(null)
 
-  const carregarAgregados = useCallback(async () => {
-    const [{ data: s }, { data: pc }, { data: pd }] = await Promise.all([
-      supabase.rpc('get_vendas_stats'),
-      supabase.rpc('get_vendas_por_consultora'),
-      supabase.rpc('get_vendas_por_dia', { p_dias: 30 }),
+  const periodo = useMemo(() => calcPeriodo(filtro), [filtro])
+
+  // Persiste o filtro (não perde a pesquisa ao atualizar)
+  useEffect(() => { localStorage.setItem(LS_KEY, JSON.stringify(filtro)) }, [filtro])
+
+  const carregar = useCallback(async () => {
+    const { inicio, fim } = periodo
+    const params = { p_inicio: inicio, p_fim: fim }
+    let listaQ = supabase
+      .from('ci_vendas')
+      .select('venda_id, data_venda, valor_venda, cod_consultora, nome_curso, metodo_pagamento, plataforma, whatsapp_comprador, casada, conversa_id, conversa_contato_nome')
+      .gte('data_venda', inicio).lt('data_venda', fim)
+      .order('data_venda', { ascending: false }).limit(500)
+    if (codigo) listaQ = listaQ.eq('cod_consultora', codigo)
+
+    const [{ data: s }, { data: pc }, { data: pd }, { data: lista }] = await Promise.all([
+      supabase.rpc('get_vendas_stats', params),
+      supabase.rpc('get_vendas_por_consultora', params),
+      supabase.rpc('get_vendas_por_dia', params),
+      listaQ,
     ])
     if (s?.[0]) setStats(s[0])
     setPorConsultora(pc ?? [])
-    // Supabase devolve numeric como string — converte p/ o Recharts renderizar as barras
-    setPorDia((pd ?? []).map(d => ({ label: fmtDiaCurto(d.dia), vendas: Number(d.vendas), faturamento: Number(d.faturamento) })))
+    setPorDia((pd ?? []).map(x => ({ label: fmtDiaCurto(x.dia), vendas: Number(x.vendas), faturamento: Number(x.faturamento) })))
+    setVendas(lista ?? [])
     setAtualizadoAt(new Date())
-  }, [])
+  }, [periodo, codigo])
 
-  const carregarLista = useCallback(async () => {
-    let q = supabase
-      .from('ci_vendas')
-      .select('venda_id, data_venda, valor_venda, cod_consultora, consultora_venda, nome_curso, metodo_pagamento, plataforma, whatsapp_comprador, whatsapp_final8, casada, conversa_id, conversa_contato_nome, conversa_consultora, classificacao_ia, score_ia')
-      .order('data_venda', { ascending: false })
-      .limit(300)
-    if (codigo) q = q.eq('cod_consultora', codigo)
-    const { data } = await q
-    setVendas(data ?? [])
-  }, [codigo])
+  useEffect(() => { setLoading(true); carregar().finally(() => setLoading(false)) }, [carregar])
 
-  const carregarTudo = useCallback(async () => {
-    setLoading(true)
-    await Promise.all([carregarAgregados(), carregarLista()])
-    setLoading(false)
-  }, [carregarAgregados, carregarLista])
-
-  useEffect(() => { carregarTudo() }, [carregarTudo])
-
-  // Auto-refresh a cada 30s + Realtime (best-effort) na tabela de vendas
-  const listaRef = useRef(carregarLista)
-  const agregRef = useRef(carregarAgregados)
-  useEffect(() => { listaRef.current = carregarLista; agregRef.current = carregarAgregados })
+  // Auto-refresh 30s + Realtime (best-effort), sempre com o filtro atual
+  const carregarRef = useRef(carregar)
+  useEffect(() => { carregarRef.current = carregar })
   useEffect(() => {
-    const t = setInterval(() => { agregRef.current(); listaRef.current() }, 30_000)
-    const canal = supabase
-      .channel('vendas-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'eja_vendas' }, () => {
-        agregRef.current(); listaRef.current()
-      })
+    const t = setInterval(() => carregarRef.current(), 30_000)
+    const canal = supabase.channel('vendas-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eja_vendas' }, () => carregarRef.current())
       .subscribe()
     return () => { clearInterval(t); supabase.removeChannel(canal) }
   }, [])
 
   function copiar(txt) { navigator.clipboard.writeText(txt); toast.success('Copiado!') }
+  function setPreset(key) {
+    setFiltro(f => key === 'custom' ? { ...f, preset: 'custom' } : { ...f, preset: key })
+  }
 
   const pctCasadas = stats?.total ? Math.round((stats.casadas / stats.total) * 100) : 0
 
@@ -109,27 +150,58 @@ export function Vendas() {
       <Topbar title="Vendas" />
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-900">
 
-        {/* Stats gerais */}
+        {/* Filtro de período */}
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] px-3 py-2.5 flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1.5 mr-1">
+            <CalendarDays size={13} /> Período
+          </span>
+          {PRESETS.map(p => (
+            <button key={p.key} onClick={() => setPreset(p.key)}
+              className={`px-2.5 py-1 rounded text-[11px] font-medium border transition-colors ${
+                filtro.preset === p.key
+                  ? 'bg-blue-600 border-blue-600 text-white'
+                  : 'border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-blue-400 hover:text-blue-500'
+              }`}>
+              {p.label}
+            </button>
+          ))}
+          {filtro.preset === 'custom' && (
+            <div className="flex items-center gap-1.5 ml-1">
+              <input type="date" value={filtro.dInicio}
+                onChange={e => setFiltro(f => ({ ...f, dInicio: e.target.value }))}
+                className="px-2 py-1 text-[11px] border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700" />
+              <span className="text-[11px] text-slate-400">até</span>
+              <input type="date" value={filtro.dFim}
+                onChange={e => setFiltro(f => ({ ...f, dFim: e.target.value }))}
+                className="px-2 py-1 text-[11px] border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700" />
+            </div>
+          )}
+          <span className="ml-auto text-[11px] text-slate-400 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            {periodo.label}{atualizadoAt ? ` · ${atualizadoAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : ''}
+          </span>
+        </div>
+
+        {/* Stats do período */}
         <div className="flex gap-2">
-          <StatCard label="Faturamento total" value={stats ? brl(stats.faturamento_total) : '…'} sub={`${stats?.total ?? '…'} vendas pagas`} icon={DollarSign} cor="text-green-500" />
-          <StatCard label="Faturamento do mês" value={stats ? brl(stats.faturamento_mes) : '…'} sub={`${stats?.vendas_mes ?? '…'} vendas no mês`} icon={TrendingUp} cor="text-blue-500" />
-          <StatCard label="Vendas hoje" value={stats?.vendas_hoje ?? '…'} sub="pagas hoje" icon={ShoppingCart} cor="text-orange-500" />
+          <StatCard label="Faturamento" value={stats ? brl(stats.faturamento) : '…'} sub={`no período · ${periodo.label}`} icon={DollarSign} cor="text-green-500" />
+          <StatCard label="Vendas" value={stats?.total ?? '…'} sub="pagas no período" icon={ShoppingCart} cor="text-blue-500" />
+          <StatCard label="Ticket médio" value={stats ? brlFull(stats.ticket_medio) : '…'} sub="por venda" icon={Receipt} cor="text-orange-500" />
           <StatCard label="Casadas com conversa" value={stats ? `${pctCasadas}%` : '…'} sub={`${stats?.casadas ?? '…'} de ${stats?.total ?? '…'} vinculadas`} icon={Link2} cor="text-purple-500" />
         </div>
 
-        {/* Breakdown por consultora */}
+        {/* Breakdown por consultora (do período) */}
         <div className="space-y-1.5">
           <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide px-0.5">Por consultora · clique para filtrar</p>
           <div className="flex gap-2">
-            <button
-              onClick={() => setCodigo(null)}
+            <button onClick={() => setCodigo(null)}
               className={`flex-1 min-w-0 border rounded-[6px] px-3 py-2.5 text-left transition-all ${
                 codigo === null
                   ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20 ring-2 ring-offset-1 ring-green-400'
                   : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50'
               }`}>
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded font-mono bg-slate-100 dark:bg-slate-700 text-slate-500">TODAS</span>
-              <p className="text-[18px] font-bold leading-none mt-1 text-slate-800 dark:text-slate-100">{stats ? brl(stats.faturamento_total) : '…'}</p>
+              <p className="text-[18px] font-bold leading-none mt-1 text-slate-800 dark:text-slate-100">{stats ? brl(stats.faturamento) : '…'}</p>
               <p className="text-[11px] text-slate-500 mt-0.5">{stats?.total ?? '…'} vendas</p>
             </button>
             {['vtv', 'vjc', 'vkm', 'outros'].map(cod => {
@@ -150,24 +222,31 @@ export function Vendas() {
           </div>
         </div>
 
-        {/* Gráfico por dia */}
+        {/* Gráfico por dia — com valores em cada barra */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[6px] p-3">
           <div className="flex items-center gap-2 mb-2">
             <CalendarDays size={13} className="text-blue-500" />
-            <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">Faturamento por dia — últimos 30 dias</p>
+            <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">Faturamento por dia · {periodo.label}</p>
           </div>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={porDia} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-              <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} interval="preserveStartEnd" />
-              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(v) => brl(v)} width={54} />
-              <Tooltip
-                formatter={(v, n) => n === 'faturamento' ? [brlFull(v), 'Faturamento'] : [v, 'Vendas']}
-                labelStyle={{ fontSize: 11 }} contentStyle={{ fontSize: 11, borderRadius: 6 }}
-              />
-              <Bar dataKey="faturamento" fill="#22c55e" radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {porDia.length === 0 ? (
+            <p className="text-center text-[12px] text-slate-400 py-12">Sem vendas no período</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={porDia} margin={{ top: 20, right: 8, left: 8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(v) => brl(v)} width={54} />
+                <Tooltip
+                  formatter={(v, n) => n === 'faturamento' ? [brlFull(v), 'Faturamento'] : [v, 'Vendas']}
+                  labelStyle={{ fontSize: 11 }} contentStyle={{ fontSize: 11, borderRadius: 6 }} cursor={{ fill: 'rgba(148,163,184,0.1)' }}
+                />
+                <Bar dataKey="faturamento" fill="#22c55e" radius={[3, 3, 0, 0]}>
+                  <LabelList dataKey="faturamento" position="top" formatter={compact}
+                    style={{ fontSize: 9, fill: '#64748b', fontWeight: 600 }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* Tabela */}
@@ -178,25 +257,18 @@ export function Vendas() {
               <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">
                 {loading ? '…' : `${vendas.length} vendas`}{codigo && <span className="text-slate-400 font-normal"> · {NOME_CODIGO[codigo]}</span>}
               </p>
-              <span className="text-[10px] text-slate-400">últimas 300</span>
+              <span className="text-[10px] text-slate-400">{periodo.label}</span>
             </div>
-            <div className="flex items-center gap-2">
-              {atualizadoAt && (
-                <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                  atualiza sozinho · {atualizadoAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </span>
-              )}
-              <button onClick={carregarTudo} disabled={loading} className="text-slate-400 hover:text-blue-500 disabled:opacity-50">
-                <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-              </button>
-            </div>
+            <button onClick={() => { setLoading(true); carregar().finally(() => setLoading(false)) }} disabled={loading}
+              className="text-slate-400 hover:text-blue-500 disabled:opacity-50">
+              <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+            </button>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-16"><RefreshCw size={18} className="animate-spin text-slate-400" /></div>
           ) : vendas.length === 0 ? (
-            <p className="text-center text-[12px] text-slate-400 py-12">Nenhuma venda encontrada</p>
+            <p className="text-center text-[12px] text-slate-400 py-12">Nenhuma venda no período</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -221,10 +293,8 @@ export function Vendas() {
                         </button>
                       </td>
                       <td className="px-3 py-2.5 text-right text-[12px] font-bold text-green-600 whitespace-nowrap">{brlFull(v.valor_venda)}</td>
-                      <td className="px-3 py-2.5">
-                        <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 ${COR_CODIGO[v.cod_consultora]}`}>
-                          {v.cod_consultora?.toUpperCase()}
-                        </span>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 ${COR_CODIGO[v.cod_consultora]}`}>{v.cod_consultora?.toUpperCase()}</span>
                         <span className="text-[10px] text-slate-400 ml-1">{NOME_CODIGO[v.cod_consultora]}</span>
                       </td>
                       <td className="px-3 py-2.5 text-[10px] text-slate-500 max-w-[180px] truncate" title={v.nome_curso}>{v.nome_curso ?? '—'}</td>
