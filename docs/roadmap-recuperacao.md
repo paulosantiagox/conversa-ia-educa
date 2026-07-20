@@ -2,6 +2,21 @@
 
 > Documento vivo. Última atualização: 17/07/2026
 
+## 📌 Notas do Claude Code (achados reais — 20/07/2026)
+
+**Como usar este doc:** é a fonte de verdade do planejamento, versionada no repo. Qualquer sessão (Claude Code no projeto ou chat) lê daqui. Ideias novas → adicionar aqui; implementar aos poucos.
+
+**Fase 0 (conciliar pagos) — o que JÁ existe:**
+- As vendas pagas estão centralizadas em `eja_vendas` (Guru/ASAAS via n8n). A view **`ci_vendas`** já casa venda ↔ conversa pelos DOIS números (comprador + associado/whatsapp_contato) por `whatsapp_final8`.
+- **A trava anti-vexame = "tem venda casada em `ci_vendas`"**. Simples e confiável. NÃO usar a tag `AF-ALUNO` nem nenhuma `AF-*` — são da **Autoflix** (0 casam com EJA).
+- Números reais já limpos de quem pagou: **2.540** leads "recebeu link, não pagou" (mais quente) · **7.487** "recebeu valor, sem link, não pagou".
+- Ressalva: o casamento por telefone pega a grande maioria; risco residual só quando alguém paga com um 3º número que não foi capturado nem como comprador nem como associado. Mitigável depois (ex: fuzzy por nome).
+
+**Fase 3 (áudio/energia) — JÁ existe parcialmente:** o motor `analisaIA.js` gera por conversa: `estado_consultora` (engajada/mecanica/apatica/ansiosa/agressiva/insegura), `erros_consultora`, `objecoes_detectadas`, `resumo_ia`, `score_ia`, `sugestoes_ia`. Isso já é a "energia da vendedora" a NÍVEL DE CONVERSA. Falta: análise por MENSAGEM e por tipo (texto/áudio/link), e comparar energia das que fecharam × não fecharam. E rodar a análise em escala (só ~600 de 21k analisadas).
+
+**Recomendação de MVP da Aba de Recuperação (o que fazer primeiro):**
+KPIs do topo → os 2 baldes → fila priorizada (Bloco 5) → reagendados (Bloco 6). O resto (motivos por R$, curva de esfriamento, funil de toques, placar) entra depois. Precisa de uma tabela nova `ci_recuperacao` (status por lead: atribuido_a, status, resultado, motivo, agendado_para) pro lock "em recuperação" e pro registro obrigatório de resultado.
+
 ## 0. Status
 
 | Fase | O que é | Status |
