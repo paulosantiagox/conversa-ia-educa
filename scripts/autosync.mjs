@@ -10,6 +10,12 @@
  * Usa as MESMAS variáveis do .env do site (VITE_*).
  */
 import { createClient } from '@supabase/supabase-js'
+import { execFile } from 'node:child_process'
+import { writeFile, readFile, mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { promisify } from 'node:util'
+const execFileP = promisify(execFile)
 
 const E = process.env
 const SUPA_URL = E.VITE_SUPABASE_URL
@@ -185,7 +191,29 @@ async function syncTagsRecentes() {
   log(`  tags: ${comTags} leads com tags atualizados`)
 }
 
-// ─── Whisper (via Edge Function transcrever-audio) ─────────────────────────────
+// ─── Whisper LOCAL (self-hosted na VPS via whisper-ctranslate2) ────────────────
+// Ligar com WHISPER_LOCAL=true no .env do servidor (+ WHISPER_MODEL, ex: small/medium).
+// Precisa do binário `whisper-ctranslate2` instalado (pip install whisper-ctranslate2).
+// Grátis (não usa a API paga da OpenAI). Duração fica 0 (custo local = 0).
+const WHISPER_LOCAL = E.WHISPER_LOCAL === 'true'
+const WHISPER_MODEL = E.WHISPER_MODEL || 'small'
+const WHISPER_BIN   = E.WHISPER_BIN || 'whisper-ctranslate2'
+async function transcreverLocal(audioUrl) {
+  const res = await fetch(audioUrl)
+  if (!res.ok) { const e = new Error(`download ${res.status}`); e.status = res.status; throw e }
+  const buf = Buffer.from(await res.arrayBuffer())
+  const dir = await mkdtemp(join(tmpdir(), 'wh-'))
+  const inFile = join(dir, 'audio.ogg')
+  await writeFile(inFile, buf)
+  try {
+    await execFileP(WHISPER_BIN, [inFile, '--model', WHISPER_MODEL, '--language', 'pt',
+      '--output_dir', dir, '--output_format', 'txt', '--task', 'transcribe'], { timeout: 300000 })
+    const txt = await readFile(join(dir, 'audio.txt'), 'utf8')
+    return { text: txt.trim(), duracao_segundos: 0 }
+  } finally { await rm(dir, { recursive: true, force: true }) }
+}
+
+// ─── Whisper (local se WHISPER_LOCAL=true, senão Edge Function paga da OpenAI) ──
 async function transcreverPendentes() {
   const { data: pend } = await supabase.from('ci_mensagens')
     .select('id, audio_url, datacrazy_id, conversa_id')
@@ -198,20 +226,31 @@ async function transcreverPendentes() {
     const { data: c } = await supabase.from('ci_mensagens').select('transcricao').eq('audio_url', a.audio_url).not('transcricao', 'is', null).limit(1).maybeSingle()
     if (c?.transcricao) { await supabase.from('ci_mensagens').update({ transcricao: c.transcricao }).eq('id', a.id); cache++; continue }
     try {
-      const res = await fetch(`${SUPA_URL}/functions/v1/transcrever-audio`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPA_KEY}` },
-        body: JSON.stringify({ audio_url: a.audio_url, datacrazy_id: a.datacrazy_id }),
-      })
-      const d = await res.json()
-      if (d?.ok) {
-        await supabase.from('ci_mensagens').update({ transcricao: d.text }).eq('id', a.id)
-        await supabase.from('ci_uso_api').insert({ servico: 'openai', operacao: 'transcricao_audio', modelo: 'whisper-1', custo_usd: (d.duracao_segundos / 60) * 0.006, duracao_segundos: d.duracao_segundos ?? 0, conversa_id: a.conversa_id ?? null })
+      if (WHISPER_LOCAL) {
+        // Whisper self-hosted na VPS — grátis
+        const r = await transcreverLocal(a.audio_url)
+        await supabase.from('ci_mensagens').update({ transcricao: r.text }).eq('id', a.id)
+        await supabase.from('ci_uso_api').insert({ servico: 'whisper-local', operacao: 'transcricao_audio', modelo: WHISPER_MODEL, custo_usd: 0, duracao_segundos: 0, conversa_id: a.conversa_id ?? null })
         ok++
-      } else if (d?.tipo === 'inacessivel') {
-        await supabase.from('ci_mensagens').update({ transcricao: '[inacessível]' }).eq('id', a.id)
-      } else if (d?.tipo === 'quota') { log('  whisper: cota OpenAI esgotada — pausando'); break }
-    } catch {}
-    await delay(300)
+      } else {
+        // Whisper via OpenAI (pago) — Edge Function
+        const res = await fetch(`${SUPA_URL}/functions/v1/transcrever-audio`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPA_KEY}` },
+          body: JSON.stringify({ audio_url: a.audio_url, datacrazy_id: a.datacrazy_id }),
+        })
+        const d = await res.json()
+        if (d?.ok) {
+          await supabase.from('ci_mensagens').update({ transcricao: d.text }).eq('id', a.id)
+          await supabase.from('ci_uso_api').insert({ servico: 'openai', operacao: 'transcricao_audio', modelo: 'whisper-1', custo_usd: (d.duracao_segundos / 60) * 0.006, duracao_segundos: d.duracao_segundos ?? 0, conversa_id: a.conversa_id ?? null })
+          ok++
+        } else if (d?.tipo === 'inacessivel') {
+          await supabase.from('ci_mensagens').update({ transcricao: '[inacessível]' }).eq('id', a.id)
+        } else if (d?.tipo === 'quota') { log('  whisper: cota OpenAI esgotada — pausando'); break }
+      }
+    } catch (e) {
+      if (e?.status === 404 || e?.status === 403) await supabase.from('ci_mensagens').update({ transcricao: '[inacessível]' }).eq('id', a.id)
+    }
+    await delay(WHISPER_LOCAL ? 50 : 300)
   }
   log(`  whisper: ${ok} transcritos, ${cache} reaproveitados (cache)`)
 }
