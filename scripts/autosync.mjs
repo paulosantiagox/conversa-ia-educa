@@ -172,7 +172,7 @@ async function syncMensagens24h() {
 
 // ─── Tags ───────────────────────────────────────────────────────────────────
 async function syncTagsRecentes() {
-  const TAKE = 100, LIM = 20; let skip = 0, pagina = 1, comTags = 0
+  const TAKE = 100, LIM = Number(E.TAGS_PAGINAS || 10); let skip = 0, pagina = 1, comTags = 0
   while (pagina <= LIM) {
     const leads = arr(await dc(`/api/v1/leads?take=${TAKE}&skip=${skip}`), 'leads', 'data')
     if (!leads.length) break
