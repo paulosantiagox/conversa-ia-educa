@@ -10,6 +10,7 @@
  * Usa as MESMAS variáveis do .env do site (VITE_*).
  */
 import { createClient } from '@supabase/supabase-js'
+import ws from 'ws' // WebSocket p/ o Supabase no Node < 22 (Node 24 tem nativo; VPS roda Node 20)
 import { execFile } from 'node:child_process'
 import { writeFile, readFile, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -27,7 +28,7 @@ if (!SUPA_URL || !SUPA_KEY || !DC_BASE || !DC_KEY) {
   console.error('[autosync] ENV faltando (VITE_SUPABASE_URL/ANON_KEY, VITE_DATACRAZY_*)'); process.exit(1)
 }
 
-const supabase = createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: false } })
+const supabase = createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: false }, realtime: { transport: ws } })
 const delay = (ms) => new Promise(r => setTimeout(r, ms))
 const now = () => new Date().toISOString()
 const log = (...a) => console.log(new Date().toLocaleTimeString('pt-BR'), ...a)
