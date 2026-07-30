@@ -29,6 +29,14 @@
 - (problema técnico no pagamento) —
 
 ## 5. O que faz a venda fechar  *(preenchido pela ANÁLISE — comparação ganhou × perdeu)*
+
+### ⚡ ACHADO #1 (dados, 20/07/2026): VELOCIDADE da 1ª resposta é o maior fator
+Conversão por tempo até a 1ª resposta da consultora (conversas com >2 msgs):
+- até 5 min → **7,5%** · 5–30 min → 3,9% · 30–60 min → 4,5% · 1–6h → 2,3% · **6h+ → 0,9%**
+- Responder em ≤5 min converte **~8x mais** que depois de 6h.
+- **41% dos leads (12.479) esperam +6h** pela 1ª resposta — maior grupo e o que menos vende.
+- **Ação recomendada:** primeiro toque automático em segundos + alerta em tempo real pra consultora + fila por idade (lead novo primeiro) + KPI/alerta de tempo de 1ª resposta. (Abertura com áudio automático é irrelevante hoje: só 67 conversas.)
+
 - Gatilhos de fechamento que funcionaram
 - Momento certo de mandar o link / o valor
 - Papel do áudio da consultora
