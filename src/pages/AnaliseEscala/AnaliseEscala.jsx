@@ -60,7 +60,7 @@ export function AnaliseEscala() {
 
   useEffect(() => {
     carregar()
-    const t = setInterval(carregar, 8000)
+    const t = setInterval(carregar, 4000)
     return () => clearInterval(t)
   }, [carregar])
 
@@ -107,7 +107,7 @@ export function AnaliseEscala() {
         <Card icon={CheckCircle2} color="#22c55e" label="Analisadas" value={totalFeito.toLocaleString('pt-BR')} sub={`${pctGeral}% da base`} />
         <Card icon={Cpu} color="#3b82f6" label="Na fila" value={(totalGeral - totalFeito).toLocaleString('pt-BR')} sub="pendentes" />
         <Card icon={DollarSign} color="#f59e0b" label="Custo API" value={`$ ${Number(fila?.custo_acumulado ?? 0).toFixed(2)}`} sub={`teto $ ${Number(fila?.teto_usd ?? 0).toFixed(0)} · modo aqui = $0`} />
-        <Card icon={Clock} color="#8b5cf6" label="Último update" value={fmtDt(fila?.ultimo_tick).split(' ')[1] ?? '—'} sub={fmtDt(fila?.ultimo_tick).split(' ')[0] ?? ''} />
+        <Card icon={Clock} color="#8b5cf6" label="Última análise" value={fmtDt(recentes[0]?.analisado_em).split(' ')[1] ?? '—'} sub={fmtDt(recentes[0]?.analisado_em).split(' ')[0] ?? ''} />
       </div>
 
       {/* Controles */}
