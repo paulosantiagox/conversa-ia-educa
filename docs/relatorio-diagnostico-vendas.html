@@ -1,0 +1,345 @@
+<title>Inteligência de Vendas EJA — Diagnóstico</title>
+<style>
+  :root{
+    --ground:#f1f5f9; --surface:#ffffff; --surface-2:#f8fafc; --surface-3:#f1f5f9;
+    --ink:#0f172a; --ink-soft:#475569; --ink-faint:#94a3b8;
+    --line:#e2e8f0; --line-strong:#cbd5e1;
+    --accent:#0891b2; --accent-soft:#cffafe; --accent-ink:#155e75;
+    --good:#16a34a; --good-soft:#dcfce7;
+    --warn:#d97706; --warn-soft:#fef3c7;
+    --bad:#dc2626; --bad-soft:#fee2e2;
+    --gold:#a16207; --gold-soft:#fef9c3;
+    --shadow:0 1px 2px rgba(15,23,42,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#0b1220; --surface:#0f172a; --surface-2:#131f36; --surface-3:#1e293b;
+      --ink:#e6edf6; --ink-soft:#9fb0c6; --ink-faint:#64748b;
+      --line:#1e293b; --line-strong:#334155;
+      --accent:#38bdf8; --accent-soft:#0c2b3a; --accent-ink:#7dd3fc;
+      --good:#4ade80; --good-soft:#0f2e1c;
+      --warn:#fbbf24; --warn-soft:#3a2c0a;
+      --bad:#f87171; --bad-soft:#3a1418;
+      --gold:#fcd34d; --gold-soft:#33280a;
+      --shadow:0 1px 2px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#f1f5f9; --surface:#ffffff; --surface-2:#f8fafc; --surface-3:#f1f5f9;
+    --ink:#0f172a; --ink-soft:#475569; --ink-faint:#94a3b8;
+    --line:#e2e8f0; --line-strong:#cbd5e1;
+    --accent:#0891b2; --accent-soft:#cffafe; --accent-ink:#155e75;
+    --good:#16a34a; --good-soft:#dcfce7; --warn:#d97706; --warn-soft:#fef3c7;
+    --bad:#dc2626; --bad-soft:#fee2e2; --gold:#a16207; --gold-soft:#fef9c3;
+    --shadow:0 1px 2px rgba(15,23,42,.06);
+  }
+  :root[data-theme="dark"]{
+    --ground:#0b1220; --surface:#0f172a; --surface-2:#131f36; --surface-3:#1e293b;
+    --ink:#e6edf6; --ink-soft:#9fb0c6; --ink-faint:#64748b;
+    --line:#1e293b; --line-strong:#334155;
+    --accent:#38bdf8; --accent-soft:#0c2b3a; --accent-ink:#7dd3fc;
+    --good:#4ade80; --good-soft:#0f2e1c; --warn:#fbbf24; --warn-soft:#3a2c0a;
+    --bad:#f87171; --bad-soft:#3a1418; --gold:#fcd34d; --gold-soft:#33280a;
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:0 20px 72px}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-variant-numeric:tabular-nums}
+  h1,h2,h3{text-wrap:balance; margin:0}
+  .eyebrow{font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent-ink)}
+  section{margin-top:40px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:18px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+  .sec-num{font-family:ui-monospace,monospace; font-size:12px; color:var(--ink-faint); font-weight:600}
+  .sec-head h2{font-size:20px; font-weight:700; letter-spacing:-.01em}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow)}
+  .pad{padding:18px 20px}
+
+  /* Header */
+  header{padding:34px 0 8px; display:flex; justify-content:space-between; align-items:flex-start; gap:16px}
+  header h1{font-size:27px; font-weight:800; letter-spacing:-.02em; line-height:1.15}
+  header .sub{color:var(--ink-soft); font-size:14px; margin-top:8px; max-width:56ch}
+  .meta-row{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
+  .chip{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:5px 10px; border-radius:20px; background:var(--surface-3); border:1px solid var(--line); color:var(--ink-soft)}
+  .chip b{color:var(--ink)}
+  .toggle{flex:none; cursor:pointer; background:var(--surface); border:1px solid var(--line-strong); color:var(--ink-soft); border-radius:8px; width:38px; height:38px; font-size:16px; display:grid; place-items:center}
+  .toggle:hover{color:var(--ink); border-color:var(--accent)}
+
+  /* Thesis */
+  .thesis{background:linear-gradient(180deg,var(--accent-soft),transparent); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:10px; padding:20px 22px; margin-top:22px}
+  .thesis .k{font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--accent-ink)}
+  .thesis p{margin:8px 0 0; font-size:17px; line-height:1.5; font-weight:500}
+  .thesis strong{font-weight:800}
+
+  /* Funnel */
+  .funnel{display:flex; flex-direction:column; gap:0}
+  .fstage{display:grid; grid-template-columns:1fr; gap:6px; padding:14px 0}
+  .fstage .lab{display:flex; justify-content:space-between; align-items:baseline; gap:12px}
+  .fstage .name{font-weight:600; font-size:14px}
+  .fstage .name small{color:var(--ink-faint); font-weight:500}
+  .fstage .val{font-family:ui-monospace,monospace; font-variant-numeric:tabular-nums; font-weight:700; font-size:16px}
+  .bar{height:26px; border-radius:6px; background:var(--surface-3); overflow:hidden; position:relative}
+  .bar span{display:block; height:100%; border-radius:6px; transition:width 1s cubic-bezier(.22,1,.36,1)}
+  .leak{display:flex; align-items:center; gap:10px; margin:2px 0 2px auto; padding:7px 12px; width:fit-content; background:var(--bad-soft); border:1px solid var(--bad); border-radius:8px}
+  .leak .ico{color:var(--bad); font-weight:800; font-size:13px}
+  .leak .txt{font-size:12.5px; color:var(--ink)}
+  .leak .txt b{color:var(--bad)}
+  .conv{font-size:11px; color:var(--ink-faint); text-align:right; font-family:ui-monospace,monospace}
+
+  /* Won vs lost */
+  table{width:100%; border-collapse:collapse; font-size:14px}
+  .tscroll{overflow-x:auto}
+  th,td{text-align:left; padding:11px 12px; border-bottom:1px solid var(--line)}
+  th{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); font-weight:700}
+  td.num,th.num{text-align:right; font-family:ui-monospace,monospace; font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:none}
+  .won{color:var(--good); font-weight:700}
+  .lost{color:var(--bad); font-weight:700}
+  .verdict{font-size:12.5px; color:var(--ink-soft)}
+
+  /* generic grid */
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  @media(max-width:720px){.grid2,.grid3{grid-template-columns:1fr}}
+
+  .cohort .top{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:4px}
+  .cohort h3{font-size:15px; font-weight:700}
+  .badge{font-size:11px; font-weight:700; padding:4px 9px; border-radius:6px}
+  .badge.rec{background:var(--good-soft); color:var(--good); border:1px solid var(--good)}
+  .badge.crit{background:var(--bad-soft); color:var(--bad); border:1px solid var(--bad)}
+  .cohort .metric{font-family:ui-monospace,monospace; font-size:30px; font-weight:800; letter-spacing:-.02em; margin:6px 0 2px}
+  .cohort .metric small{font-size:13px; color:var(--ink-soft); font-weight:600; font-family:system-ui}
+  .cohort ul{margin:12px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px}
+  .cohort li{font-size:13px; color:var(--ink-soft); padding-left:16px; position:relative}
+  .cohort li::before{content:""; position:absolute; left:0; top:8px; width:5px; height:5px; border-radius:50%; background:var(--ink-faint)}
+  .err{margin-top:14px; padding:11px 13px; background:var(--bad-soft); border-radius:8px; font-size:12.5px}
+  .err b{color:var(--bad)}
+  .quote{font-style:italic; color:var(--ink); background:var(--surface-3); border-left:2px solid var(--line-strong); padding:2px 10px; border-radius:0 4px 4px 0; display:inline-block; margin-top:2px}
+
+  /* consultoras */
+  .cons{display:flex; flex-direction:column; gap:0}
+  .cons .hd{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px}
+  .cons h3{font-size:16px; font-weight:700}
+  .cons .tag{font-size:11px; font-weight:600; color:var(--ink-soft); background:var(--surface-3); padding:3px 8px; border-radius:5px; margin-left:8px}
+  .scores{display:flex; gap:18px; margin-top:auto; padding-top:12px}
+  .score .n{font-family:ui-monospace,monospace; font-size:22px; font-weight:800}
+  .score .l{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); font-weight:600}
+  .crown{color:var(--gold)}
+  .desc{font-size:13px; color:var(--ink-soft); margin-top:2px}
+
+  /* playbook */
+  .tactics{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  @media(max-width:720px){.tactics{grid-template-columns:1fr}}
+  .tactic{display:flex; gap:11px; padding:12px 14px; background:var(--surface); border:1px solid var(--line); border-radius:9px}
+  .tactic .i{flex:none; width:22px; height:22px; border-radius:6px; background:var(--good-soft); color:var(--good); font-weight:800; font-size:12px; display:grid; place-items:center; font-family:ui-monospace,monospace}
+  .tactic p{margin:0; font-size:13px}
+  .tactic p b{font-weight:700}
+  .phrases{margin-top:16px; display:flex; flex-direction:column; gap:8px}
+  .phrase{font-size:13.5px; padding:10px 14px; background:var(--gold-soft); border-radius:8px; font-style:italic; color:var(--ink)}
+
+  /* action plan */
+  .action{display:flex; gap:14px; padding:15px 16px; border-bottom:1px solid var(--line)}
+  .action:last-child{border-bottom:none}
+  .action .rank{flex:none; font-family:ui-monospace,monospace; font-weight:800; font-size:15px; color:var(--accent-ink); width:26px}
+  .action .body h3{font-size:14.5px; font-weight:700}
+  .action .body p{margin:4px 0 0; font-size:13px; color:var(--ink-soft)}
+  .action .impact{flex:none; align-self:center; margin-left:auto; font-size:11px; font-weight:700; padding:4px 9px; border-radius:6px; background:var(--accent-soft); color:var(--accent-ink); white-space:nowrap}
+
+  .foot{margin-top:44px; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-faint); line-height:1.6}
+  .foot b{color:var(--ink-soft)}
+  @media(prefers-reduced-motion:reduce){.bar span{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">ConversIA · Inteligência de Vendas</div>
+      <h1>Por que vendemos — e por onde o dinheiro está vazando</h1>
+      <p class="sub">Diagnóstico da operação EJA Educa Brasil a partir da análise real das conversas de WhatsApp: 120 conversas lidas em profundidade (texto + áudios transcritos) sobre uma base completa de 31.778 atendimentos.</p>
+      <div class="meta-row">
+        <span class="chip">Base <b>31.778 conversas</b></span>
+        <span class="chip">Áudios <b>73.820 · 75% transcritos</b></span>
+        <span class="chip">Vendas <b>2.796</b></span>
+        <span class="chip">Meta <b>R$ 400k</b></span>
+        <span class="chip">03/08/2026</span>
+      </div>
+    </div>
+    <button class="toggle" id="tg" aria-label="Alternar tema">◐</button>
+  </header>
+
+  <div class="thesis">
+    <div class="k">A tese em uma frase</div>
+    <p>O que os vencedores fazem é <strong>exatamente o que falta</strong> nos que perdem. Existe um playbook campeão que funciona — ele só é aplicado de forma inconsistente. Padronizá-lo, com <strong>ponte de pagamento</strong> e <strong>callback na data prometida</strong>, é o caminho mais curto pro 2x.</p>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>O funil — e o furo principal</h2></div>
+    <div class="card pad">
+      <div class="funnel">
+        <div class="fstage">
+          <div class="lab"><span class="name">Conversas reais <small>(mais de 1 mensagem)</small></span><span class="val">31.778</span></div>
+          <div class="bar"><span style="width:100%;background:var(--accent)"></span></div>
+        </div>
+        <div class="fstage">
+          <div class="lab"><span class="name">Receberam o valor <small>(o preço)</small></span><span class="val">10.513</span></div>
+          <div class="bar"><span data-w="33" style="width:0;background:var(--warn)"></span></div>
+          <div class="conv">33% das conversas</div>
+        </div>
+        <div class="leak">
+          <span class="ico">▼ FURO</span>
+          <span class="txt"><b>8.302 pessoas ouviram o preço e nunca receberam o link.</b> É aqui que o dinheiro vaza — antes do pagamento, não nele.</span>
+        </div>
+        <div class="fstage">
+          <div class="lab"><span class="name">Receberam o link <small>(de pagamento)</small></span><span class="val">3.013</span></div>
+          <div class="bar"><span data-w="9.5" style="width:0;background:var(--bad)"></span></div>
+          <div class="conv">só 28,7% de quem ouviu o preço</div>
+        </div>
+        <div class="fstage">
+          <div class="lab"><span class="name">Compraram <small>(venda casada com a conversa)</small></span><span class="val">972</span></div>
+          <div class="bar"><span data-w="3.1" style="width:0;background:var(--good)"></span></div>
+          <div class="conv">3,1% das conversas</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>O que separa quem ganha de quem perde</h2></div>
+    <div class="card tscroll">
+      <table>
+        <thead><tr><th>Sinal</th><th class="num">Ganhou</th><th class="num">Perdeu</th><th>Leitura</th></tr></thead>
+        <tbody>
+          <tr><td>Recebeu o <b>valor</b></td><td class="num">32%</td><td class="num">33%</td><td class="verdict">Igual — <b>dizer o preço não decide nada</b></td></tr>
+          <tr><td>Recebeu o <b>link</b></td><td class="num won">36%</td><td class="num lost">8,6%</td><td class="verdict"><b>5×</b> — avançar até o link é o divisor de águas</td></tr>
+          <tr><td>Tempo da 1ª resposta</td><td class="num won">159 min</td><td class="num lost">557 min</td><td class="verdict">Ganhador responde <b>3,5× mais rápido</b></td></tr>
+          <tr><td>Profundidade (nº de mensagens)</td><td class="num won">28,6</td><td class="num lost">14,0</td><td class="verdict">Ganhador <b>engaja o dobro</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid2" style="margin-top:16px">
+      <div class="card pad">
+        <div class="eyebrow" style="color:var(--bad)">O abandono</div>
+        <p style="margin:8px 0 0;font-size:14px">Em <b>~100% das conversas perdidas, a última mensagem foi da consultora</b> — o lead some em silêncio. O follow-up genérico (<span class="quote">Tudo certo pra finalizarmos?</span>) não reativa ninguém.</p>
+      </div>
+      <div class="card pad">
+        <div class="eyebrow" style="color:var(--warn)">A alavanca nº1 (mais barata)</div>
+        <p style="margin:8px 0 0;font-size:14px">Responder em <b>≤5 min converte 7,5%</b>; em 6h+ cai pra <b>0,9%</b> — <b>8× de diferença</b>. E <b>41% dos leads</b> (12.479) esperam mais de 6 horas hoje.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>Onde os leads morrem — os dois cohorts de perda</h2></div>
+    <div class="grid2">
+      <div class="card pad cohort">
+        <div class="top"><h3>Perdeu no VALOR</h3><span class="badge crit">8.302 leads</span></div>
+        <div class="metric">53%<small> somem no segundo em que o preço aparece</small></div>
+        <ul>
+          <li>Preço cheio jogado como imagem + fechamento binário <span class="quote">à vista ou no cartão?</span> — pressupõe que o lead pode pagar.</li>
+          <li>Quem não tem cartão não diz "não tenho" — só evapora.</li>
+          <li>Leads pediram socorro e foram ignorados: <span class="quote">o máximo 100 reais daria pra mim</span> → sem resposta.</li>
+        </ul>
+        <div class="err"><b>Erro nº1:</b> preço cru + fechamento binário, sem ponte de pagamento acessível e sem link/próximo passo.</div>
+      </div>
+      <div class="card pad cohort">
+        <div class="top"><h3>Perdeu no LINK</h3><span class="badge rec">~40% recuperável</span></div>
+        <div class="metric">1 em 2<small> dá a data de pagamento — e ninguém retoma</small></div>
+        <ul>
+          <li>Causa nº1: <span class="quote">só recebo dia X</span> → consultora diz "combinado, seguro" e <b>some</b>. Morre no "ok, combinado".</li>
+          <li>Causa nº2: sem cartão / quer boleto / recebe em dinheiro.</li>
+          <li>Causa nº3: "vou falar com esposo/pai" sem follow-up.</li>
+        </ul>
+        <div class="err"><b>Erro nº1:</b> mandar o link antes de resolver dinheiro/data/método — e zero callback na data que o próprio lead marcou.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>As consultoras — tom e energia lidos nos áudios</h2></div>
+    <div class="grid3">
+      <div class="card pad cons">
+        <div class="hd"><h3>Júlia <span class="crown">♛</span></h3></div>
+        <div class="tag" style="margin:0 0 6px 0;display:inline-block">Consultiva / humana</div>
+        <p class="desc">Devolve o objetivo do lead ("o concurso que você quer"), qualifica antes do preço e ancora com lógica. A que converte com menos atrito.</p>
+        <div class="scores">
+          <div class="score"><div class="n" style="color:var(--good)">9</div><div class="l">Acolhim.</div></div>
+          <div class="score"><div class="n">8</div><div class="l">Fechar</div></div>
+        </div>
+      </div>
+      <div class="card pad cons">
+        <div class="hd"><h3>Tatiane</h3></div>
+        <div class="tag" style="margin:0 0 6px 0;display:inline-block">Fechadora robótica</div>
+        <p class="desc">Urgência forte e CTA consistente, mas recita blocos decorados idênticos em dezenas de conversas. Falta soar humana.</p>
+        <div class="scores">
+          <div class="score"><div class="n" style="color:var(--warn)">6</div><div class="l">Acolhim.</div></div>
+          <div class="score"><div class="n">8</div><div class="l">Fechar</div></div>
+        </div>
+      </div>
+      <div class="card pad cons">
+        <div class="hd"><h3>Ketlen</h3></div>
+        <div class="tag" style="margin:0 0 6px 0;display:inline-block">Suporte / retenção</div>
+        <p class="desc">Excelente acalmando frustração, mas pouca ambição de fechar. Melhor uso: alocar formalmente em recuperação e pós-venda.</p>
+        <div class="scores">
+          <div class="score"><div class="n">8</div><div class="l">Acolhim.</div></div>
+          <div class="score"><div class="n" style="color:var(--bad)">5</div><div class="l">Fechar</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card pad" style="margin-top:14px;border-left:3px solid var(--warn)">
+      <p style="margin:0;font-size:13px"><b>⚠ Achado técnico crítico:</b> a atribuição de consultora está no nível da <i>conversa</i>, não da <i>mensagem</i>. Leads reatribuídos misturam áudios de vendedoras diferentes e há 9.457 áudios "Sem atendente" — qualquer ranking por consultora sai distorcido até isso ser corrigido.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>O playbook que fecha (destilado das vendas reais)</h2></div>
+    <div class="tactics">
+      <div class="tactic"><span class="i">1</span><p><b>Ancoragem com preço riscado</b> — sempre ~R$1.297~ → R$847 / 12× R$84,70. Em 100% das vendas.</p></div>
+      <div class="tactic"><span class="i">2</span><p><b>Fechamento por escolha alternativa</b> — nunca "quer comprar?", sempre "à vista ou no cartão?".</p></div>
+      <div class="tactic"><span class="i">3</span><p><b>Escada de desconto com autoridade</b> — 847→747→697→597, "falei com a supervisora", "só hoje".</p></div>
+      <div class="tactic"><span class="i">4</span><p><b>Remover atrito na hora</b> — cartão falhou? Gera link/Asaas/boleto na hora. É o que mais salva venda.</p></div>
+      <div class="tactic"><span class="i">5</span><p><b>Flexibilizar pagamento</b> — entrada + resto em 30d, boleto parcelado, PIX de entrada pra garantir.</p></div>
+      <div class="tactic"><span class="i">6</span><p><b>Quebrar o medo de golpe</b> (objeção nº1) — INEP, CNPJ, "mil alunos" + validação empática.</p></div>
+      <div class="tactic"><span class="i">7</span><p><b>Áudio pessoal + resposta rápida</b> — chama pelo nome e conduz o checkout campo a campo.</p></div>
+    </div>
+    <div class="phrases">
+      <div class="phrase">"Qual a melhor forma de investimento pra você hoje, à vista ou no cartão?"</div>
+      <div class="phrase">"Conversei com minha supervisora e consegui um desconto — mas só se fechar a matrícula hoje."</div>
+      <div class="phrase">"Assim como existe gente de má fé, existe também a gente, que usa a internet pra trabalhar e ajudar o próximo."</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><h2>Plano de ação — onde está o dinheiro, por prioridade</h2></div>
+    <div class="card">
+      <div class="action"><span class="rank">1</span><div class="body"><h3>Motor de callback na "data do dinheiro"</h3><p>Quando o lead diz "recebo dia X", agendar retomada automática naquele dia com o valor reservado + PIX pronto. Sozinho cobre metade do cohort perdeu-no-link.</p></div><span class="impact">~40% recuperável</span></div>
+      <div class="action"><span class="rank">2</span><div class="body"><h3>Ponte de pagamento antes do link</h3><p>Para quem não tem cartão, oferecer proativamente parcela mensal / boleto / entrada — em vez de jogar o preço cru e fechar no binário.</p></div><span class="impact">8.302 leads</span></div>
+      <div class="action"><span class="rank">3</span><div class="body"><h3>Alerta de 1ª resposta ≤5 min</h3><p>Fila e alarme dos leads novos sem resposta. É a alavanca mais barata: 8× de conversão, e 41% dos leads esperam +6h hoje.</p></div><span class="impact">8× conversão</span></div>
+      <div class="action"><span class="rank">4</span><div class="body"><h3>Aba de Recuperação com sugestão de IA</h3><p>Fila priorizada dos 8.302 "valor sem link" + 2.663 "link sem pagar", com a mensagem de reabordagem certa por cohort.</p></div><span class="impact">10.965 leads</span></div>
+      <div class="action"><span class="rank">5</span><div class="body"><h3>Rodar a análise de IA na base inteira</h3><p>Hoje só 2% (614 de 31.778) foram analisadas. Rodar tudo popula objeções, erros e sentimento em toda a base — e corrigir a atribuição por mensagem.</p></div><span class="impact">base 100%</span></div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <b>Método:</b> diagnóstico quantitativo sobre 31.778 conversas reais e 2.796 vendas (view <span class="mono">ci_vendas</span>, casamento venda↔conversa pelos 2 números). Camada qualitativa: 120 conversas lidas integralmente em 4 cohorts (vencedores, perdeu-no-valor, perdeu-no-link) + amostra de áudios transcritos por consultora.<br>
+    <b>Ressalvas:</b> vendas por consultora subcontadas pelo casamento (581 em "Sem atendente"); atribuição de consultora no nível da conversa; áudios transcritos por voz têm ruído. Números de funil são exatos; percentuais qualitativos são de amostra. Documento-fonte vivo: <span class="mono">/docs/inteligencia-vendas.md</span>.
+  </div>
+</div>
+
+<script>
+  (function(){
+    var root=document.documentElement, btn=document.getElementById('tg');
+    btn.addEventListener('click',function(){
+      var cur=root.getAttribute('data-theme');
+      if(!cur){ cur = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark':'light'; }
+      root.setAttribute('data-theme', cur==='dark'?'light':'dark');
+    });
+    // animate bars in
+    function grow(){document.querySelectorAll('.bar span[data-w]').forEach(function(s){s.style.width=s.getAttribute('data-w')+'%';});}
+    if(matchMedia('(prefers-reduced-motion:reduce)').matches){grow();}
+    else{requestAnimationFrame(function(){requestAnimationFrame(grow);});}
+  })();
+</script>

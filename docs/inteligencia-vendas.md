@@ -74,13 +74,33 @@ Responder em ≤5 min converte **~8x mais** que após 6h. **41% dos leads (12.47
 
 > ⚠️ Vendas por consultora estão **subcontadas** pelo casamento venda↔conversa (581 vendas caíram em "Sem atendente"). Corrigir a atribuição é um item do roadmap. A análise de áudio (em andamento) dá o veredito qualitativo de cada uma.
 
-### 1.9 🟡 Em andamento agora (leitura profunda, 4 frentes)
-1. **Vencedores** — o que quem fechou fez diferente (tática, timing, tom).
-2. **Perdeu-no-valor** — o que a consultora mandou por último antes do lead sumir.
-3. **Perdeu-no-link** — a fricção entre link e pagamento.
-4. **Sentimento das consultoras** — tom/energia/empatia lidos nos áudios de cada uma.
+### 1.9 ✅ Leitura profunda concluída (120 conversas reais + áudios)
 
-*(Esta seção será preenchida com os achados assim que as leituras retornarem.)*
+**O FIO DE OURO:** o que os vencedores fazem é exatamente o que falta nos que perdem. O playbook campeão já existe e funciona — só é aplicado de forma inconsistente. Padronizá-lo é o caminho pro 2x.
+
+**A. Perdeu-no-VALOR** (recebeu preço, nunca recebeu link — 8.302 leads):
+- **53% somem no exato segundo em que o preço cru aparece** — sem nem verbalizar objeção.
+- Causa nº1: **preço cheio jogado como imagem + fechamento binário "à vista ou no cartão?"** — pergunta que pressupõe que o lead pode pagar. Quem não tem cartão não responde "não tenho" — só evapora.
+- Boleto/parcelamento acessível só é oferecido **reativamente** e pesado ("entrada 254 + 2x 296").
+- Leads pediram socorro e foram ignorados: *"o máximo 100 reais daria pra mim"* → sem resposta; *"seria bom se fosse a cada mês um valor"* → sem resposta.
+- **Erro nº1:** preço cru + fechamento binário, sem ponte de pagamento acessível e sem link/próximo passo.
+
+**B. Perdeu-no-LINK** (recebeu link, não comprou — 2.663 leads):
+- **~40% são recuperáveis** — o lead já *queria*, faltou timing/forma de pagamento.
+- Causa nº1 (metade): **"só recebo dia X"** — o lead dá a data de graça, consultora diz "combinado, seguro" e **ninguém retoma na data**. Morre no "ok, combinado".
+- Causa nº2: sem cartão / quer boleto / recebe em dinheiro. Causa nº3: "vou falar com esposo/pai".
+- **Erro nº1:** mandar link antes de resolver dinheiro/data/método + zero callback na data prometida.
+
+**C. Abandono (geral):** em ~100% das perdidas a última msg foi da consultora → o lead some em silêncio. Follow-up genérico ("Tudo certo pra finalizarmos?") não reativa.
+
+**D. Sentimento das consultoras (áudios reais):**
+| Consultora | Perfil | Acolh. | Fechamento | Nota |
+|---|---|---|---|---|
+| **Júlia** | Consultiva/humana 🏆 | 9 | 8 | devolve o objetivo do lead, qualifica antes do preço, ancora com lógica |
+| **Tatiane** | Fechadora robótica | 6 | 8 | urgência forte e CTA, mas recita blocos decorados idênticos |
+| **Ketlen** | Suporte/retenção | 8 | 5 | ótima acalmando frustração, pouca ambição de fechar → alocar em recuperação |
+
+> ⚠️ **Achado técnico crítico:** a atribuição de consultora está no nível da *conversa*, não da *mensagem*. Leads reatribuídos misturam áudios de vendedoras diferentes, e há 9.457 áudios "Sem atendente". Qualquer ranking por consultora sai distorcido até isso ser corrigido (autoria por mensagem).
 
 ---
 
@@ -116,7 +136,27 @@ Responder em ≤5 min converte **~8x mais** que após 6h. **41% dos leads (12.47
 6. **Qualificar antes de mandar link** — mas sem demorar. Queimar etapa e demorar são os dois extremos ruins.
 7. **Perguntar "o que te travou?"** quando o lead esfria, em vez de encerrar passivo.
 
-*(A completar com os achados da leitura: sequência-modelo de fechamento, frases de ouro, contorno de cada objeção.)*
+### As 7 táticas que fecham (destiladas das vendas reais)
+1. **Ancoragem com preço riscado** — sempre ~R$1.297~ → R$847 / 12x R$84,70. Aparece em 100% das vendas.
+2. **Fechamento por escolha alternativa** — nunca "quer comprar?", sempre *"Qual a melhor forma de investimento pra você hoje, à vista ou no cartão?"*.
+3. **Escada de desconto com autoridade + urgência** — 847→747→697→597, sempre "conversei com minha supervisora" e "só se fechar **hoje**". O slug do link carrega o preço negociado (`-697-sj`).
+4. **Remover atrito de pagamento em tempo real** — cartão falhou? Gera link alternativo/Asaas/boleto na hora, diagnostica o erro do banco, libera acesso manual. É o comportamento que **mais salva venda**.
+5. **Flexibilização radical** — entrada + resto em 30 dias, boleto parcelado, PIX de entrada pra "garantir o valor".
+6. **Quebra da objeção nº1 (medo de golpe)** — INEP `52108023`, CNPJ, "mais de mil alunos", PDFs + validação empática ("entendo seu medo, golpe hoje é cruel").
+7. **Áudio pessoal nominal + resposta rápida + hand-holding** no checkout, campo a campo.
+
+### Sequência-modelo (abertura → pagamento)
+Saudação de marca ("Confiança em primeiro lugar") → qualifica (nome/idade/série) → **descobre o objetivo** ("estudar pra quê?") → pivô do histórico ("não precisa agora") → explica plataforma (áudio+imagem) → **preço ancorado** → **fechamento alternativo** → (se objeção) escada de desconto + documentação → **link + "vai fazer a matrícula agora?"** → resolve atrito → libera acesso na hora → pós-venda.
+
+### Frases de ouro (quotes reais que fecharam)
+- *"Qual a melhor forma de investimento pra você hoje, à vista ou no cartão?"* (fechamento mais usado)
+- *"Conversei com minha supervisora e consegui um desconto pra você, mas só se fechar a matrícula hoje."*
+- *"O que está te impedindo hoje de dar esse próximo passo e concluir seus estudos?"*
+- *"Assim como existe gente agindo de má fé, existe também a gente, que usa a internet pra trabalhar e ajudar o próximo."* (quebra de golpe)
+- *"Muitas pessoas adiam esse sonho por anos. Você já deu o primeiro passo. Vamos aproveitar?"* (reativação)
+
+### Regra de ouro que emerge do cruzamento won×lost
+Os vencedores **oferecem a ponte de pagamento e retomam ativamente**; os perdedores **jogam o preço cru, fecham no binário e somem**. A diferença não é talento — é aplicar o playbook de forma consistente, com **ponte de pagamento acessível** e **callback na data prometida**.
 
 ---
 
@@ -178,9 +218,9 @@ Responder em ≤5 min converte **~8x mais** que após 6h. **41% dos leads (12.47
 | 2 | Descoberta do furo valor→link (8.302 leads) | ✅ |
 | 3 | Won×lost em métricas objetivas | ✅ |
 | 4 | Achado da velocidade da 1ª resposta | ✅ |
-| 5 | Leitura profunda won×lost (qualitativa) | 🟡 fazendo |
-| 6 | Análise de sentimento dos áudios das consultoras | 🟡 fazendo |
-| 7 | Relatório de diagnóstico visual | 🟡 fazendo |
+| 5 | Leitura profunda won×lost (qualitativa, 120 conversas) | ✅ |
+| 6 | Análise de sentimento dos áudios das consultoras | ✅ |
+| 7 | Relatório de diagnóstico visual | ✅ |
 | 8 | Rodar análise IA na base inteira (31k) | ⬜ |
 | 9 | Playbook de vendas destilado | ⬜ |
 | 10 | Base de conhecimento EJA completa (preços, produto, perfil) | ⬜ (precisa input do Paulo) |
