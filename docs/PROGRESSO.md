@@ -7,10 +7,16 @@
 > - `base-conhecimento-eja.md` — tudo sobre a escola (cresce com a análise)
 
 ## 🎯 Foco atual
-**Análise das conversas (won × lost)** para destilar padrões → playbook + base de conhecimento. É o passo que antecede a Aba de Recuperação.
+Diagnóstico won×lost **concluído** (amostra estratégica de 120 conversas + áudios). Achados e estratégia em `/docs/inteligencia-vendas.md`; relatório visual em `/docs/relatorio-diagnostico-vendas.html`. Próximo: transformar os achados em ação sobre o funil.
 
 ## ⏭️ Próximo passo concreto
-Rodar a análise das conversas em escala (won + perdeu-link + perdeu-valor), com IA lendo texto+áudio, extraindo campos estruturados pra uma tabela `ci_analise_recuperacao`. Começar com um lote e escalar.
+Construir o **motor de callback na "data do dinheiro"** (prioridade nº1 do plano de ação) + **ponte de pagamento antes do link**. Em paralelo: rodar a análise de IA na base inteira (hoje só 2%) para `ci_analise_recuperacao` e corrigir a atribuição de consultora por mensagem.
+
+## 📄 Diagnóstico (03/08) — achados-chave
+- **Maior furo: valor→link.** 10.513 ouviram o preço, só 3.013 receberam link → 8.302 vazaram aí.
+- Won×lost: receber o valor é igual (~32%); o que decide é chegar no link (36% vs 8,6%), velocidade da 1ª resposta (159 vs 557 min) e engajamento (28 vs 14 msgs).
+- Perdeu-no-link ~40% recuperável ("só recebo dia X" sem callback). Perdeu-no-valor: 53% somem no preço cru + fechamento binário sem ponte de pagamento.
+- Consultoras: Júlia consultiva (9/8), Tatiane fechadora robótica (6/8), Ketlen suporte (8/5). Atribuição por conversa distorce ranking — corrigir p/ nível de mensagem.
 
 ## ✅ Feito (changelog)
 - **20/07:** Sincronização recuperada (conversas/mensagens/tags), transcrição server-side (Edge Function, contornando bloqueio CORS da OpenAI), integração de **Vendas** (casa pelos 2 números), monitor de **Tags** (Marcações/Inbox/Vendas), **auto-sync server-side** (cron VPS 15 min + flock + mini-log), Ranking/Matriculados/Análise-IA/Re-sync ocultos do menu.
