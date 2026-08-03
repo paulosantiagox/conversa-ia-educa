@@ -16,6 +16,7 @@ import { FollowUp } from './pages/FollowUp/FollowUp'
 import { Configuracoes } from './pages/Configuracoes/Configuracoes'
 import { Sync } from './pages/Sync/Sync'
 import { AnaliseIA } from './pages/AnaliseIA/AnaliseIA'
+import { AnaliseEscala } from './pages/AnaliseEscala/AnaliseEscala'
 import { Custos } from './pages/Custos/Custos'
 import { Matriculados } from './pages/Matriculados/Matriculados'
 import { AcaoFimMes } from './pages/AcaoFimMes/AcaoFimMes'
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/configuracoes" element={<Configuracoes />} />
             <Route path="/sync" element={<Sync />} />
             <Route path="/analise-ia" element={<AnaliseIA />} />
+            <Route path="/analise-escala" element={<AnaliseEscala />} />
             <Route path="/custos" element={<Custos />} />
             <Route path="/matriculados" element={<Matriculados />} />
             <Route path="/acao-fim-mes" element={<AcaoFimMes />} />

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, MessageSquare, Flame, Bell, TrendingUp, Trophy,
-  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap, Settings, RefreshCw, DollarSign, UserCheck, Target, ShoppingCart
+  Sparkles, Brain, Tag, ChevronLeft, ChevronRight, Zap, Settings, RefreshCw, DollarSign, UserCheck, Target, ShoppingCart, Cpu
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -71,6 +71,7 @@ export function Sidebar() {
     {
       section: 'ANÁLISE',
       items: [
+        { to: '/analise-escala', label: 'Análise em Escala', icon: Cpu },
         { to: '/insights',   label: 'Insights',   icon: Brain },
         { to: '/marcacoes',  label: 'Marcações',  icon: Tag },
         { to: '/analise-ia', label: 'Análise IA', icon: Brain },
