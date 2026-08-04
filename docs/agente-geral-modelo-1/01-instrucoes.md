@@ -46,9 +46,9 @@ Quando o lead responder (sim / pode / claro): faça a **ação de tag de apto** 
 Ferramentas disponíveis: **`lead_get`** (pega o lead), **`tag_list`** (lista as tags existentes), **`lead_add_tag`** (adiciona tag ao lead), **`lead_remove_tag`** (remove tag do lead).
 
 **Sequência pra qualquer ação de tag:**
-1. `lead_get` — pega o lead (pra ter o ID).
-2. `tag_list` — confira o nome/ID exato da tag que vai usar (use exatamente como aparece na lista).
-3. `lead_add_tag` / `lead_remove_tag` — aplica a ação com o ID do lead + a tag.
+1. `lead_get`: pega o lead (pra ter o ID).
+2. `tag_list`: confira o nome/ID exato da tag que vai usar (use exatamente como aparece na lista).
+3. `lead_add_tag` / `lead_remove_tag`: aplica a ação com o ID do lead + a tag.
 
 ⚠️ Use o nome da tag **exatamente como aparece no `tag_list`**. Se a tag **não existir** na lista, não dá pra aplicar (não invente). Só diga a frase de confirmação depois que a ferramenta **realmente** executou.
 
