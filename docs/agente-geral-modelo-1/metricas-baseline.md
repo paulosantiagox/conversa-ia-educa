@@ -35,4 +35,31 @@
 - **`lead_update_notes`** (95.2%): olhar se a falha se repete.
 - Crazy Tokens por conversa deve cair.
 
-## Snapshot 2 — (preencher quando o Paulo mandar)
+## Snapshot 2 — 2026-08-05 (mesmo dia, ~1h+ depois da otimização)
+
+### Analytics gerais
+- Execuções: **573** (baseline 197 → +376)
+- Taxa de sucesso: **94.2%** (baseline 92.4% → subiu)
+- Tempo de resposta: **2.8s** (baseline 3.0s → mais rápido)
+- Crazy Tokens: **3.30M** (baseline 1.32M)
+- Resolução autônoma: **88.3%** (baseline 86.8%)
+- Conversas: **75** (baseline 21 → +54 conversas novas)
+- Msgs por conversa: **16.0** (baseline 13.0)
+
+### Desempenho de Ferramentas (cumulativo)
+| Ferramenta | Baseline 10:28 | Snapshot 2 | Δ | Leitura |
+|---|---|---|---|---|
+| tag_list | 38 | **38** | **0** | ✅ CONGELOU — eliminada nas conversas novas |
+| additional_field_lead_list | 20 | **20** | **0** | ✅ CONGELOU — eliminada nas conversas novas |
+| additional_field_update | 2 | 2 | 0 | ✅ parado (obsoleto, não usamos) |
+| lead_remove_tag | 7 | 7 | 0 | ✅ parado (não removemos mais #IN) |
+| lead_update_notes | 21 | 91 | +70 | cresce com volume (esperado) — 97.8% |
+| lead_add_tag | 32 | 74 | +42 | cresce com volume (esperado) — 100% |
+| lead_get | 38 | 66 | +28 | cresce com volume (esperado) — 98.5% |
+| lead_set_additional_field | 19 | 60 | +41 | cresce com volume (esperado) — 96.7% |
+
+### Conclusão
+- **As 3 chamadas desnecessárias congelaram** (`tag_list`, `additional_field_lead_list`, `additional_field_update` e também `lead_remove_tag`): +54 conversas novas e **zero** crescimento nelas → prova de que as conversas pós-otimização pararam de consultar à toa.
+- **Só as tools úteis cresceram** (notes, add_tag, get, set_additional_field), proporcional ao volume.
+- **Token por conversa caiu:** média cumulativa 62.9k → 44k; olhando só o **incremental** (1.98M novos ÷ 54 conversas novas) dá **~37k por conversa nova** vs ~63k antes → **queda de ~40%** por conversa.
+- Ponto de atenção: `lead_set_additional_field` a 96.7% (2 falhas em 60) e `lead_update_notes` a 97.8% — falhas pontuais, monitorar mas nada crítico.
