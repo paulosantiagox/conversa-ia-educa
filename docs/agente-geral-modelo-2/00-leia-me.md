@@ -1,8 +1,8 @@
-<!-- 🕒 Última atualização: 2026-08-06 14:24:31 (horário de Brasília) -->
+<!-- 🕒 Última atualização: 2026-08-06 15:13:25 (horário de Brasília) -->
 
 # Agente Geral — Modelo 2 (mapa da pasta)
 
-Variante **formal e direta** do agente, de **instituição séria**, para público de baixa renda / baixa escolaridade. Postura profissional, sem bajular, direto ao que importa, com palavras simples.
+Variante **formal, simples e enxuta** do agente, de **instituição séria**, para público de baixa renda / baixa escolaridade. Perguntas curtas e diretas (uma de cada vez), sem bajular, direto ao essencial. O `01-instrucoes.md` foi reescrito do zero, bem mais leve.
 
 ## O que muda em relação ao Modelo 1
 **Só as instruções** (`01-instrucoes.md`). Muda o **tom** (formal/sério, sem firula) e algumas **regras**:
