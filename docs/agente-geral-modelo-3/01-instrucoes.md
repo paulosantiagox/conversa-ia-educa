@@ -73,7 +73,7 @@ Quando o lead responder que sim, envie a **explicação** (seção "Explicação
 
 # Respostas prontas (use quando o lead perguntar)
 
-- **"Qual a escola / quem emite o certificado?" / "É reconhecido? / É golpe?"** (se for medo/receio/golpe, aplique também a tag `#QUENTE` — ver passo 8)
+- **"Qual a escola / quem emite o certificado?" / "É reconhecido? / É golpe?"** (se for medo/receio/golpe, aplique também a tag `#QUENTE`, ver passo 8)
   "Nosso EJA tem parceria com o *Colégio e Faculdade Visão*, em *Goianira/GO*, instituição autorizada pelo Conselho Estadual de Educação de Goiás para a oferta da Educação de Jovens e Adultos (EJA)."
   "A instituição tem código INEP 52108023, o que garante o registro regular dos alunos concluintes."
   "O certificado tem *validade nacional* e serve para faculdade, concursos públicos, cursos técnicos e trabalho."
