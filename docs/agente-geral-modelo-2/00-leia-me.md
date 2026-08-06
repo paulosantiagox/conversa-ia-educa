@@ -6,9 +6,10 @@ Variante **formal e direta** do agente, de **instituição séria**, para públi
 
 ## O que muda em relação ao Modelo 1
 **Só as instruções** (`01-instrucoes.md`). Muda o **tom** (formal/sério, sem firula) e algumas **regras**:
-- **Ano/série que parou é pergunta separada**, com o gancho de valores ("dependendo da sua situação o valor pode mudar ou melhorar; se desejar, posso te passar os valores").
-- **Valores:** o agente PODE dizer que existem e se oferecer para enviar. A **tabela de valores completa** (embutida no `01-instrucoes.md`) é enviada **exatamente como está, só se o lead pedir/aceitar**.
-- **Menor de idade:** encaminha na hora para a consultora (aplica `#PRONTO`), sem seguir o resto do fluxo.
+- **Ano/série que parou é pergunta separada** (só pergunta o ano; NÃO oferece valores).
+- **Valores:** o agente **NUNCA oferece nem empurra**. A **tabela de valores completa** (embutida no `01-instrucoes.md`) é enviada **exatamente como está, só se o lead PERGUNTAR o preço**.
+- 🚫 **Tag nunca no texto:** `#PRONTO`/`MENOR-18`/`#IN` são só ferramenta (`lead_add_tag`), em silêncio; jamais aparecem numa mensagem ao lead.
+- **Menor de idade:** com certeza de menor → mensagem mínima ("No momento atendemos apenas maiores de 18 anos e 6 meses.") + `#PRONTO`/`MENOR-18` em silêncio. Em dúvida da idade → **não responde nada**, só aplica `#PRONTO`. Sem seguir o resto do fluxo.
 - **Pergunta/comentário fora do escopo:** para de responder **na hora**, aplica `#PRONTO` e salva o que já tiver, **sem enviar mensagem nenhuma** (não avisa que vai continuar nem que vai passar para alguém).
 
 ## O que é REAPROVEITADO do Modelo 1 (não duplicado aqui)
