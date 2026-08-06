@@ -11,7 +11,7 @@ Atendimento **completo**: a IA qualifica e **continua sozinha** (explica, mostra
 - **Mais respostas prontas**: como funciona, escola/certificado/INEP/validade, histórico, prazo, formas de pagamento.
 
 ## Tags no Modelo 3
-- **`#QUENTE`** (`49f5f84d-...`): aplicada quando o lead **quer prosseguir com a matrícula**. Esse é o "final" provisório — Paulo vai confirmar o ponto exato.
+- **`#QUENTE`** (`49f5f84d-...`): **gatilho definido = assim que a IA envia os valores** (mandou o valor = lead quente, passa para o atendente). Aplicada em silêncio logo após os 2 blocos de valores.
 - **`#GOLPE`** (`dd416434-...`): aplicada quando o lead demonstra **medo, receio, desconfiança ou fala em golpe** (a IA tranquiliza e marca `#GOLPE` para o atendente resolver de perto). Separada do `#QUENTE` para facilitar o funil.
 - **`#PRONTO`**: só quando **precisa de humano** — (1) não sabe uma informação ("Vou confirmar isso para você.") ou (2) lead insiste em assunto totalmente fora do EJA.
 - **`MENOR-18`**: menor confirmado.
