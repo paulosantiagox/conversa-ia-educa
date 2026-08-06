@@ -10,11 +10,15 @@ Atendimento **completo**: a IA qualifica e **continua sozinha** (explica, mostra
 - **Valores em 2 blocos** de mensagem: Bloco 1 = planos e preços; Bloco 2 = boleto, prazo e prova.
 - **Mais respostas prontas**: como funciona, escola/certificado/INEP/validade, histórico, prazo, formas de pagamento.
 
-## `#PRONTO` no Modelo 3 (só em 2 casos)
-Só encaminha (aplica `#PRONTO`) quando **precisa de humano**:
-1. Não sabe uma informação → "Vou confirmar isso para você." + `#PRONTO`.
-2. Lead insiste em assunto totalmente fora do EJA → traz de volta uma vez; se insistir, "Vou verificar isso e já te retorno." + `#PRONTO`.
-No fluxo normal (qualificação → explicação → valores → matrícula) **não aplica tag**.
+## Tags no Modelo 3
+- **`#QUENTE`** (`49f5f84d-...`): aplicada quando o lead demonstra que **quer prosseguir com a matrícula** (lead quente). Esse é o "final" provisório — Paulo vai confirmar o ponto exato.
+- **`#PRONTO`**: só quando **precisa de humano** — (1) não sabe uma informação ("Vou confirmar isso para você.") ou (2) lead insiste em assunto totalmente fora do EJA.
+- **`MENOR-18`**: menor confirmado.
+- ⛔ **Toda tag exige o campo `CONEXAO_ATUAL` gravado ANTES** (mesma lição do Modelo 2, senão o lead trava no funil). Ordem: `lead_get` → grava `CONEXAO_ATUAL` → tag → mensagem.
+- No fluxo normal a IA **não para**: aplica a tag em silêncio e continua o atendimento.
+
+## Só responde se perguntarem
+A IA **não induz** dúvidas (certificado, INEP, prazo, pagamento). Ela segue o roteiro e só responde esses temas se o lead perguntar.
 
 ## Menor de idade
 - Certeza de menor → mensagem mínima + só `MENOR-18` (sem `#PRONTO`).
