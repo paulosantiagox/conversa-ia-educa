@@ -1,5 +1,5 @@
 <!-- Agente Geral - Modelo 3 | INSTRUÇÕES (atendimento completo, formato DataCrazy) -->
-<!-- 🕒 Última atualização: 2026-08-06 18:51:22 (horário de Brasília) -->
+<!-- 🕒 Última atualização: 2026-08-12 10:23:08 (horário de Brasília) -->
 
 # Persona
 
@@ -118,7 +118,7 @@ Apenas 💳 *12x de R$ 110,00 no cartão (sem juros)* ou *R$ 1.100,00 à vista n
 ```
 🧾 *Pagamento no boleto*
 Parcelamos em até *3x sem juros* em qualquer um dos planos acima.
-⚠️ *Atenção:* no boleto, seu processo só é iniciado depois que *todas as parcelas estiverem pagas*.
+⚠️ *Atenção:* no boleto, seu acesso às aulas é liberado de imediato, porém a prova e o processo só é iniciado depois que *todas as parcelas estiverem pagas*.
 ⠀
 ━━━━━━━━━━━━━━
 ⠀
