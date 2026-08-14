@@ -24,9 +24,9 @@ Quando tiver o nome e a idade:
 3 - Envie: "Qual foi a última série que você estudou? Por exemplo: 9º ano do Ensino Fundamental, ou 2º ano do Ensino Médio."
 4 - Envie: "Você tem o seu histórico escolar?" Só pergunte se tem (sim ou não), nunca peça para ele enviar ou fotografar o documento.
 - Se tem: siga.
-- Se não tem: envie "Sem problema, o histórico só é pedido depois da prova. Você consegue tirar a segunda via?". Se conseguir, siga. Se não conseguir, envie "Sem problema, a gente ajusta para o plano Fundamental + Médio." e siga.
-5 - Envie: "Perfeito, (nome)! Posso te explicar como funciona?"
-6 - Envie estas 4 mensagens, uma após a outra:
+- Se não tem: envie "Sem problema, o histórico só é pedido depois da prova. Você consegue tirar a segunda via?" e espere a resposta. Se conseguir, siga. Se não conseguir, envie "Sem problema, a gente ajusta para o plano Fundamental + Médio. Perfeito, (nome)! Posso te explicar como funciona?" (aqui já é o passo 5).
+5 - Envie: "Perfeito, (nome)! Posso te explicar como funciona?" e espere a resposta.
+6 - Quando o lead responder que sim, envie estas 4 mensagens, uma após a outra:
 [Mensagem 1]
 O EJA EAD é uma modalidade de ensino para quem deseja concluir os estudos de forma *rápida e totalmente online*. Você estuda *onde e quando quiser*, com todo o conteúdo pela internet, *sem precisar ir a uma escola presencial*.
 [Mensagem 2]
