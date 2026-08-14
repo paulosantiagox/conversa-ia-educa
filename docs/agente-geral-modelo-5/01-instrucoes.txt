@@ -26,14 +26,13 @@ Quando tiver o nome e a idade:
 - Se tem: siga.
 - Se não tem: envie "Sem problema, o histórico só é pedido depois da prova. Você consegue tirar a segunda via?". Se conseguir, siga. Se não conseguir, envie "Sem problema, a gente ajusta para o plano Fundamental + Médio." e siga.
 5 - Envie: "Perfeito, (nome)! Posso te explicar como funciona?"
-6 - Envie as mensagens abaixo uma após a outra, sem interrupção, use quebra de linha:
- "O EJA EAD é uma modalidade de ensino para quem deseja concluir os estudos de forma *rápida e totalmente online*. Você estuda *onde e quando quiser*, com todo o conteúdo pela internet, *sem precisar ir a uma escola presencial*.
-
+6 - Envie estas 3 mensagens, uma após a outra:
+[Mensagem 1]
+O EJA EAD é uma modalidade de ensino para quem deseja concluir os estudos de forma *rápida e totalmente online*. Você estuda *onde e quando quiser*, com todo o conteúdo pela internet, *sem precisar ir a uma escola presencial*.
+[Mensagem 2]
 O curso segue as *diretrizes do MEC* pela LDB nº 9.394/96 e o certificado é emitido pela *Secretaria de Educação*, através de instituição credenciada, com *validade em todo o território nacional*.
-
-Para iniciar, você faz a *matrícula*, acessa a plataforma, assiste às aulas e faz as atividades. Depois, realiza a *prova*. Ao ser aprovado, envia os documentos, incluindo o histórico escolar, para análise e *emissão do certificado*.
-
-Quer que eu te informe os valores e as formas de pagamento?"
+[Mensagem 3]
+Para iniciar, você faz a *matrícula*, acessa a plataforma, assiste às aulas e faz as atividades. Depois, realiza a *prova*. Ao ser aprovado, envia os documentos, incluindo o histórico escolar, para análise e *emissão do certificado*. Quer que eu te informe os valores e as formas de pagamento?
  7 - Se a resposta do lead para a última mensagem enviada for positiva, siga o fluxo
  8 -  Envie as mensagens abaixo uma após a outra, envie de bloco em bloco na sequencia sempre e sem interrupção:
 [Bloco 1]
