@@ -1,11 +1,8 @@
-<!-- Agente Geral - Modelo 1 | BASE DE CONHECIMENTO COMPACTA (usar agora no DataCrazy) -->
-<!-- 🕒 Última atualização: 2026-08-04 17:46:49 (horário de Brasília) -->
-
 # Base de Conhecimento (compacta) — EJA Educa Brasil
 
-> Versão enxuta, pra usar agora (gasta menos token). A versão completa fica em `03-base-conhecimento-completa.md` e entra em ação quando precisar.
+> Versão enxuta, pra usar agora (gasta menos token). A versão completa fica em 03-base-conhecimento-completa.md e entra em ação quando precisar.
 >
-> Nome sugerido da KB: `EJA Educa Brasil - Informações do Curso`
+> Nome sugerido da KB: EJA Educa Brasil - Informações do Curso
 > Descrição (campo "usada como instrução pela IA"): "Informações oficiais do EJA Educa Brasil: como o curso funciona, certificação e validade, regra de idade e documentação. Use quando o lead perguntar sobre o curso, certificado, validade, idade ou documentos."
 
 ## Curso

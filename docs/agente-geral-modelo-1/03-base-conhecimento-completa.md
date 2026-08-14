@@ -1,11 +1,8 @@
-<!-- Agente Geral - Modelo 1 | BASE DE CONHECIMENTO COMPLETA (guardada; entra em acao quando precisar) -->
-<!-- 🕒 Última atualização: 2026-08-04 17:46:49 (horário de Brasília) -->
-
 # Base de Conhecimento (completa) — EJA Educa Brasil
 
 > Versão completa, pra ir crescendo com o tempo. Guardada aqui pra não perder nada; quando o agente for fazer o atendimento por completo, a gente pluga isso.
 >
-> ⚠️ Os valores, condições e links abaixo foram extraídos das conversas de venda reais (podem estar desatualizados). Paulo: confirme os valores e links oficiais atuais antes de colocar em produção.
+> Os valores, condições e links abaixo foram extraídos das conversas de venda reais (podem estar desatualizados). Paulo: confirme os valores e links oficiais atuais antes de colocar em produção.
 
 ---
 
@@ -28,7 +25,7 @@
 - 18 anos (mas ainda não 18a6m): matricula e estuda; a prova libera ao completar a idade.
 - Menor de 18: ainda não matricula; precisa ter 18 anos e 6 meses.
 
-## 4. Condições e planos do aluno  ⚠️ CONFIRMAR VALORES ATUAIS
+## 4. Condições e planos do aluno  CONFIRMAR VALORES ATUAIS
 - Ensino Médio completo: de ~R$ 1.297 por R$ 847 à vista (PIX) ou 12x de R$ 84,70 (cartão).
 - Só o 3º ano do Médio (quem parou no 3º): condição reduzida, R$ 697 (12x de R$ 69,70).
 - Ensino Fundamental + Médio (quem não tem/precisa do fundamental, ou não tem histórico): plano combinado. *(confirmar valor)*
@@ -36,9 +33,9 @@
 - Flexibilização: entrada + saldo depois; entrada no PIX + restante no cartão/boleto; boleto parcelado; link "sem juros".
 - Quem precisa do Fundamental: se o lead não tem o fundamental concluído, o plano é Fundamental + Médio (aceleramento), e ao final ele já sai com o histórico.
 
-## 5. Pagamento e links  ⚠️ CONFIRMAR LINKS OFICIAIS ATUAIS
-- Domínio dos links: `pay.ejaeducabrasil.com/pay/...` (ex.: `ensino-medio-847`, `ensino-medio-697`, `ensino-medio-697-sj` = sem juros), com `utm_source` por consultora (`cod-vtv` Tatiane, `cod-vjc` Júlia, `cod-vkm` Ketlen).
-- Plataforma alternativa quando o cartão falha: Asaas (`asaas.com/c/...` cartão, `asaas.com/i/...` boleto).
+## 5. Pagamento e links  CONFIRMAR LINKS OFICIAIS ATUAIS
+- Domínio dos links: pay.ejaeducabrasil.com/pay/... (ex.: ensino-medio-847, ensino-medio-697, ensino-medio-697-sj = sem juros), com utm_source por consultora (cod-vtv Tatiane, cod-vjc Júlia, cod-vkm Ketlen).
+- Plataforma alternativa quando o cartão falha: Asaas (asaas.com/c/... cartão, asaas.com/i/... boleto).
 - PIX (chave CNPJ): 59.905.568/0001-02 — EJA EDUCA BRASIL EAD LTDA. *(confirmar)*
 - Após o pagamento: liberação imediata do acesso (link da plataforma + login e senha gerados na hora).
 - Setor administrativo (certificação/documentos): confirmar número oficial atual.

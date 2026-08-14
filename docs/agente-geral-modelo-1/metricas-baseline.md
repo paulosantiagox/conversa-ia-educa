@@ -1,9 +1,7 @@
-<!-- 🕒 Snapshot salvo em: 2026-08-05 10:28:57 (horário de Brasília) -->
-
 # Métricas do Agente — baseline (antes de medir a otimização)
 
-> Snapshot salvo pra comparar com o próximo (~1h depois), pra ver se a otimização (IDs fixos, sem `tag_list` nem `additional_field_lead_list`) reduziu as chamadas desnecessárias em conversas NOVAS.
-> ⚠️ Os números abaixo são cumulativos (incluem chamadas de antes da otimização). A otimização foi deployada por volta de 10:24 de 2026-08-05, então o efeito aparece só nas execuções a partir daí.
+> Snapshot salvo pra comparar com o próximo (~1h depois), pra ver se a otimização (IDs fixos, sem tag_list nem additional_field_lead_list) reduziu as chamadas desnecessárias em conversas NOVAS.
+> Os números abaixo são cumulativos (incluem chamadas de antes da otimização). A otimização foi deployada por volta de 10:24 de 2026-08-05, então o efeito aparece só nas execuções a partir daí.
 
 ## Snapshot 1 — 2026-08-05 10:28:57
 
@@ -30,9 +28,9 @@
 - Qualidade da KB: 70% | Sucesso de tools: 99%
 
 ## O que observar no próximo snapshot
-- `tag_list` e `additional_field_lead_list` devem PARAR de crescer (a otimização os eliminou). Se continuarem subindo nas conversas novas, o agente ainda está consultando à toa.
-- `additional_field_update` deve ficar parado em 2 (não usamos mais).
-- `lead_update_notes` (95.2%): olhar se a falha se repete.
+- tag_list e additional_field_lead_list devem PARAR de crescer (a otimização os eliminou). Se continuarem subindo nas conversas novas, o agente ainda está consultando à toa.
+- additional_field_update deve ficar parado em 2 (não usamos mais).
+- lead_update_notes (95.2%): olhar se a falha se repete.
 - Crazy Tokens por conversa deve cair.
 
 ## Snapshot 2 — 2026-08-05 (mesmo dia, ~1h+ depois da otimização)
@@ -59,7 +57,7 @@
 | lead_set_additional_field | 19 | 60 | +41 | cresce com volume (esperado) — 96.7% |
 
 ### Conclusão
-- As 3 chamadas desnecessárias congelaram (`tag_list`, `additional_field_lead_list`, `additional_field_update` e também `lead_remove_tag`): +54 conversas novas e zero crescimento nelas → prova de que as conversas pós-otimização pararam de consultar à toa.
+- As 3 chamadas desnecessárias congelaram (tag_list, additional_field_lead_list, additional_field_update e também lead_remove_tag): +54 conversas novas e zero crescimento nelas → prova de que as conversas pós-otimização pararam de consultar à toa.
 - Só as tools úteis cresceram (notes, add_tag, get, set_additional_field), proporcional ao volume.
 - Token por conversa caiu: média cumulativa 62.9k → 44k; olhando só o incremental (1.98M novos ÷ 54 conversas novas) dá ~37k por conversa nova vs ~63k antes → queda de ~40% por conversa.
-- Ponto de atenção: `lead_set_additional_field` a 96.7% (2 falhas em 60) e `lead_update_notes` a 97.8% — falhas pontuais, monitorar mas nada crítico.
+- Ponto de atenção: lead_set_additional_field a 96.7% (2 falhas em 60) e lead_update_notes a 97.8% — falhas pontuais, monitorar mas nada crítico.
