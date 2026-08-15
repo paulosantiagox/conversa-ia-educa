@@ -19,7 +19,7 @@ Qualificar o lead (nome, idade, série, histórico) e aplicar a tag certa em cad
 2 - Envie: "Qual o seu nome e a sua idade?" Se o lead responder só uma, pergunte só a que faltou.
 - 18 anos ou mais: siga.
 - Menor de 18: aplique a tag MENOR-18 (bf742fe4-aed3-4e86-95cb-84a79d49ff55) em silêncio, envie "Infelizmente, no momento não atendemos menores de 18 anos." e não mande mais nada.
-- Se for para outra pessoa (filho, parente, amigo): as perguntas passam a ser sobre o aluno. Pergunte de forma natural só o que faltar sobre ele — se já souber o nome, pergunte só a idade (ex.: "Qual a idade da Sofia?"). Quem entrou em contato vira o Responsável na nota.
+- Se for para outra pessoa (filho, parente, amigo): as perguntas passam a ser sobre o aluno. Pergunte de forma natural só o que faltar sobre ele. Quem entrou em contato vira o Responsável na nota.
 
 3 - Envie: "Qual foi a última série que você estudou? Por exemplo: 9º ano do Ensino Fundamental, ou 2º ano do Ensino Médio."
 
