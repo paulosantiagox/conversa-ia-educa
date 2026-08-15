@@ -35,7 +35,7 @@ Qualificar o lead (objetivo, nome, idade, série, histórico) e aplicar a tag ce
 - Tem: siga.
 - Não tem: envie "Sem problema, o histórico só é pedido depois da prova. Você consegue tirar a segunda via?" e espere a resposta. Se não conseguir, envie "Sem problema, a gente ajusta para o plano Fundamental + Médio."
 
-6 - Grave a nota em silêncio com lead_update_notes. NUNCA apague nem altere o que já estiver nas notas — apenas ACRESCENTE. Se já houver conteúdo, mantenha tudo o que existe e adicione, ao final, uma nova linha com: Objetivo | Nome do aluno | Idade | Série | Histórico | Responsável.
+6 - Grave a nota em silêncio, sem apagar nada. Atenção: lead_update_notes SUBSTITUI o campo inteiro. Por isso, primeiro leia a nota atual do lead (lead_get) e, ao gravar, envie TODO o conteúdo que já existia mais uma nova linha ao final com: Objetivo | Nome do aluno | Idade | Série | Histórico | Responsável. Nunca envie só a sua parte, para não apagar o que já estava.
 
 7 - Envie: "Posso te explicar como funciona, (nome)?" e espere a resposta. Quando o lead responder que sim, aplique a tag #EXPLICACAO (87489102-2fde-4d2d-80d5-9051a2d45ee1) em silêncio, sem escrever nada. A automação envia a saudação e a explicação.
 
