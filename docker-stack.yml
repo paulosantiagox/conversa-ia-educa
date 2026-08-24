@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  conversa-ia-educa:
+    image: conversa-ia-educa:latest
+    networks: [OrionNet]
+    deploy:
+      replicas: 1
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=OrionNet
+        - traefik.http.routers.conversa-ia-educa.rule=Host(`conversia.3smax.com`)
+        - traefik.http.routers.conversa-ia-educa.entrypoints=websecure
+        - traefik.http.routers.conversa-ia-educa.tls.certresolver=letsencryptresolver
+        - traefik.http.services.conversa-ia-educa.loadbalancer.server.port=80
+
+networks:
+  OrionNet:
+    external: true
